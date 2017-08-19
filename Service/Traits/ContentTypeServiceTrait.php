@@ -3,14 +3,14 @@
  * Copyright (c) 2017.
  */
 
-namespace Origammi\Bundle\EzAppBundle\Repository\Api;
+namespace Origammi\Bundle\EzAppBundle\Service\Traits;
 
 use Origammi\Bundle\EzAppBundle\Repository\ContentTypeService;
 
 
 /**
  * Trait ContentTypeServiceTrait
- * @package   Origammi\Bundle\EzAppBundle\Repository\Api
+ * @package   Origammi\Bundle\EzAppBundle\Service\Traits
  * @author    Andraž Jalovec <andraz.jalovec@origammi.co>
  * @copyright 2017 Origammi (http://origammi.co)
  */

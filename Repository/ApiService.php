@@ -12,15 +12,15 @@ use eZ\Publish\API\Repository\Values\Content\Query;
 use eZ\Publish\API\Repository\Values\Content\Search\SearchResult;
 use eZ\Publish\Core\QueryType\QueryType;
 use eZ\Publish\Core\QueryType\QueryTypeRegistry;
-use Origammi\Bundle\EzAppBundle\Repository\Api\ContentServiceInterface;
-use Origammi\Bundle\EzAppBundle\Repository\Api\ContentServiceTrait;
-use Origammi\Bundle\EzAppBundle\Repository\Api\ContentTypeServiceInterface;
-use Origammi\Bundle\EzAppBundle\Repository\Api\ContentTypeServiceTrait;
-use Origammi\Bundle\EzAppBundle\Repository\Api\LocationServiceInterface;
-use Origammi\Bundle\EzAppBundle\Repository\Api\LocationServiceTrait;
-use Origammi\Bundle\EzAppBundle\Repository\Api\RepositoryServiceTrait;
-use Origammi\Bundle\EzAppBundle\Repository\Api\SearchServiceInterface;
-use Origammi\Bundle\EzAppBundle\Repository\Api\SearchServiceTrait;
+use Origammi\Bundle\EzAppBundle\Service\Traits\ContentServiceInterface;
+use Origammi\Bundle\EzAppBundle\Service\Traits\ContentServiceTrait;
+use Origammi\Bundle\EzAppBundle\Service\Traits\ContentTypeServiceInterface;
+use Origammi\Bundle\EzAppBundle\Service\Traits\ContentTypeServiceTrait;
+use Origammi\Bundle\EzAppBundle\Service\Traits\LocationServiceInterface;
+use Origammi\Bundle\EzAppBundle\Service\Traits\LocationServiceTrait;
+use Origammi\Bundle\EzAppBundle\Service\Traits\RepositoryServiceTrait;
+use Origammi\Bundle\EzAppBundle\Service\Traits\SearchServiceInterface;
+use Origammi\Bundle\EzAppBundle\Service\Traits\SearchServiceTrait;
 
 /**
  * Class ApiService
