@@ -1,0 +1,12 @@
+{
+    "name": "ajalovec/ez-app-bundle",
+    "type": "symfony-bundle",
+    "require": {
+        "php": ""~5.5|~7.0",
+        "ezsystems/ezpublish-kernel": "^6.5"
+    },
+    "autoload": {
+        "psr-0": { "Origammi\\Bundle\\EzAppBundle": "" }
+    },
+    "target-dir": "Origammi/Bundle/EzAppBundle"
+}
