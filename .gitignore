@@ -1,0 +1,11 @@
+.DS_Store
+.vagrant
+.idea
+
+/vendor/
+/bin/
+composer.lock
+
+/bower_components/
+/node_modules/
+/.sass-cache/

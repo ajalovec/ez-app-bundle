@@ -1,0 +1,87 @@
+services:
+
+  origammi_ezapp.api:
+      class: Origammi\Bundle\EzAppBundle\Repository\ApiService
+      arguments:
+          - "@ezpublish.query_type.registry"
+      calls:
+          - [setSearchService, ["@ezpublish.api.service.search"]]
+          - [setLocationService, ["@origammi_ezapp.api.location"]]
+          - [setContentService, ["@origammi_ezapp.api.content"]]
+          - [setContentTypeService, ["@origammi_ezapp.api.content_type"]]
+
+  origammi_ezapp.api.content:
+      class: Origammi\Bundle\EzAppBundle\Repository\ContentService
+      arguments:
+          - "@ezpublish.api.service.content"
+          - "@ezpublish.api.service.search"
+
+  origammi_ezapp.api.location:
+      class: Origammi\Bundle\EzAppBundle\Repository\LocationService
+      arguments:
+          - "@ezpublish.api.service.location"
+          - "@ezpublish.api.service.search"
+
+  origammi_ezapp.api.content_type:
+      class: Origammi\Bundle\EzAppBundle\Repository\ContentTypeService
+      arguments:
+          - "@ezpublish.api.service.content_type"
+
+
+  origammi_ezapp.service.language_resolver:
+        class: Origammi\Bundle\EzAppBundle\Service\LanguageResolver
+        arguments:
+            - "@ezpublish.locale.converter"
+            - "@ezpublish.translation_helper"
+            - "@request_stack"
+
+  origammi_ezapp.service.content_type_resolver:
+      class: Origammi\Bundle\EzAppBundle\Service\ContentTypeResolver
+      arguments:
+          - "@origammi_ezapp.api.content_type"
+
+  origammi_ezapp.service.field_resolver:
+      class: Origammi\Bundle\EzAppBundle\Service\FieldResolver
+      arguments:
+          - "@ezpublish.field_helper"
+          - "@ezpublish.fieldtype.ezrichtext.converter.output.xhtml5"
+          - "@ezpublish.fieldtype.ezimage.variation_service"
+          - "@ezpublish.translation_helper"
+
+
+  origammi_ezapp.service.location_resolver:
+      class: Origammi\Bundle\EzAppBundle\Service\LocationResolver
+      arguments:
+          - "@origammi_ezapp.api.location"
+          - "@ezpublish.templating.global_helper"
+
+
+
+  origammi_ezapp.twig.content_extension:
+      class: Origammi\Bundle\EzAppBundle\Twig\ContentExtension
+      arguments:
+        - '@origammi_ezapp.service.content_type_resolver'
+        - '@origammi_ezapp.api'
+        - '@origammi_ezapp.service.field_resolver'
+      tags:
+          - { name: twig.extension }
+
+#  origammi_ezapp.service.global_helper:
+#          class: Origammi\Bundle\EzAppBundle\Service\GlobalHelper
+#          arguments:
+#            - "@ezpublish.config.resolver"
+#            - "@ezpublish.api.service.location"
+#            - "@router"
+#            - "@ezpublish.translation_helper"
+#
+#          calls:
+#              - [setRequestStack, ["@request_stack"]]
+
+  ##
+  # Controllers
+  #
+  origammi_ezapp.controller.language_switcher:
+          class: Origammi\Bundle\EzAppBundle\Controller\LanguageSwitcherController
+          arguments:
+              - "@origammi_ezapp.service.language_resolver"
+              - "@ezpublish.controller.content.view"
