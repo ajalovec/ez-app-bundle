@@ -13,13 +13,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
 /**
- * Class InstallCommand
+ * Class ChangePasswordCommand
  *
  * @package   Origammi\Bundle\EzAppBundle\Command
  * @author    Andraž Jalovec <andraz.jalovec@origammi.co>
  * @copyright 2017 Origammi (http://origammi.co)
  */
-class LoadUserCommand extends ContainerAwareCommand
+class ChangePasswordCommand extends ContainerAwareCommand
 {
     /**
      * @var Repository
@@ -61,19 +61,21 @@ This interactive shell will first ask you for a password.
 You can alternatively specify the password as a second argument:
   <info>php %command.full_name% matthieu mypassword</info>
 EOT
-            );
+            )
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->repository = $this->getContainer()->get('ezpublish.api.repository');
-        $this->username = $input->getArgument('username');
-        $this->password = $input->getArgument('password');
+        $this->username   = $input->getArgument('username');
+        $this->password   = $input->getArgument('password');
 
         #TODO: update user
 
         $output->writeln(sprintf('Changed password for user <comment>%s</comment>', $this->username));
     }
+
     /**
      * {@inheritdoc}
      */
@@ -86,6 +88,7 @@ EOT
                 if (empty($username)) {
                     throw new \Exception('Username can not be empty');
                 }
+
                 return $username;
             });
             $questions['username'] = $question;
@@ -96,6 +99,7 @@ EOT
                 if (empty($password)) {
                     throw new \Exception('Password can not be empty');
                 }
+
                 return $password;
             });
             $question->setHidden(true);
