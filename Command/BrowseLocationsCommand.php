@@ -5,8 +5,10 @@
 
 namespace Origammi\Bundle\EzAppBundle\Command;
 
+use eZ\Publish\API\Repository\Repository;
 use eZ\Publish\API\Repository\Values\Content\Location;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Origammi\Bundle\EzAppBundle\Command\Helper\TableHelper;
+use Origammi\Bundle\EzAppBundle\Command\Helper\TableRowData;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -15,101 +17,106 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * This commands walks through a subtree and prints out the content names.
  */
-class BrowseLocationsCommand extends ContainerAwareCommand
+class BrowseLocationsCommand extends BrowseCommand
 {
-    /**
-     * @var \eZ\Publish\API\Repository\LocationService
-     */
-    private $locationService;
-    /**
-     * @var \eZ\Publish\API\Repository\ContentService
-     */
-    private $contentService;
-
     /**
      * This method override configures on input argument for the content id
      */
     protected function configure()
     {
+        parent::configure();
+
         $this
-            ->setName('origammi:ez:browse_locations')
+            ->setName('origammi:ez:browse:locations')
             ->addArgument('locationId', InputArgument::OPTIONAL, 'Location ID to browse from')
-            ->addOption('show-content-type', null, InputOption::VALUE_NONE, 'Show content types for each location')
             ->addOption('depth', 'd', InputOption::VALUE_OPTIONAL, 'Set max depth for recursion.')
+            ->addOption('content', '-c', InputOption::VALUE_NONE, 'Show content information for each location')
         ;
     }
 
-    /**
-     * Prints out the location name, and recursively calls itself on each its children
-     *
-     * @param array                                              $data
-     * @param \eZ\Publish\API\Repository\Values\Content\Location $location
-     * @param OutputInterface                                    $output
-     * @param InputInterface                                     $input
-     * @param int                                                $depth The current depth
-     */
-    private function browseLocation(array &$data, Location $location, OutputInterface $output, InputInterface $input, $depth = 0)
+    public function getLocationFormat(TableRowData $row, $id, $index)
     {
-        $contentType = $this->getContainer()->get('origammi_ezapp.api.content_type')->load($location->contentInfo->contentTypeId);
-
-        // indent according to depth and write out the name of the content
-        $name = sprintf('%s %s', str_pad('', $depth), $location->contentInfo->name);
-
-        $d = [
-            $location->id,
-            $name,
-        ];
-
-        if ($input->getOption('show-content-type')) {
-            $d[] = $contentType->identifier;
+        if ($row['id'] == $this->getSiteaccessRootLocationId()) {
+            $format = '<fg=green;options=underscore>%s</>';
+        } elseif ($row['depth'] == 1) {
+            $format = '<fg=green>%s</>';
+        } else {
+            $format = '<fg=white>%s</>';
         }
 
-        $data[] = $d;
-        $maxDepth = (int)$input->getOption('depth');
-
-        if ($maxDepth && $depth >= $maxDepth) {
-            return;
-        }
-        // we request the location's children using the location service, and call browseLocation on each
-        $childLocations = $this->locationService->loadLocationChildren($location);
-        foreach ($childLocations->locations as $childLocation) {
-            $this->browseLocation($data, $childLocation, $output, $input, $depth + 1);
-        }
+        return sprintf($format, $row->get($id));
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function configureTable(TableHelper $table, InputInterface $input)
     {
-        /** @var $repository \eZ\Publish\API\Repository\Repository */
-        $repository            = $this->getContainer()->get('ezpublish.api.repository');
-        $this->contentService  = $repository->getContentService();
-        $this->locationService = $repository->getLocationService();
-        // fetch the input argument
-        $locationId = $input->getArgument('locationId') ?: $this->getContainer()->get('ezpublish.config.resolver')->getParameter('content.tree_root.location_id');
+        $showContentId = (bool)$input->getOption('content');
 
+        $table->addColumn('contentType', 'Content type')
+            ->setAlign(TableHelper::ALIGN_RIGHT)
+            ->setValueResolver([$this, 'getLocationFormat'])
+        ;
 
-        $table = $this->getHelperSet()->get('table');
-        $data = [];
-        $headers = ['Id', 'Name'];
+        $table->addColumn('id')
+            ->setAlign(TableHelper::ALIGN_CENTER)
+            ->setValueResolver(function (TableRowData $data, $id, $index) use ($showContentId) {
+                $format = '<fg=white>%s</>';
 
-        if ($input->getOption('show-content-type')) {
-            $headers[] = 'ContentType';
-        }
+                if ($data['invisible']) {
+                    $format = '<fg=red;options=bold>%s</>';
+                } elseif ($data['id'] == $this->getSiteaccessRootLocationId()) {
+                    $format = '<fg=green;options=underscore>%s</>';
+                } elseif ($data['depth'] == 1) {
+                    $format = '<fg=green>%s</>';
+                }
 
+                return sprintf($format, $data->get($showContentId ? 'contentId' : $id));
+            })
+        ;
 
-        try {
-            // load the starting location and browse
-            $location = $this->locationService->loadLocation($locationId);
-            $this->browseLocation($data, $location, $output, $input);
-            $table
-                ->setHeaders($headers)
-                ->setRows($data)
-                ->render($output)
-            ;
+        $table->addColumn('name')
+            ->setValueResolver(function (TableRowData $data, $id, $index) {
+                $value = $this->getLocationFormat($data, $id, $index);
 
-        } catch (\eZ\Publish\API\Repository\Exceptions\NotFoundException $e) {
-            $output->writeln("<error>No location found with id $locationId</error>");
-        } catch (\eZ\Publish\API\Repository\Exceptions\UnauthorizedException $e) {
-            $output->writeln("<error>Anonymous users are not allowed to read location with id $locationId</error>");
-        }
+                if ($data['invisible']) {
+                    $value = sprintf('%s <fg=red;options=bold>[ h ]</>', $value);
+                }
+
+                return str_repeat('  ', $data['level']) . $value;
+            })
+        ;
+
+//        $table->addColumn('path');
+//        $table->addColumn('remoteId');
+
     }
+
+    protected function loadData(Repository $repository, InputInterface $input, OutputInterface $output)
+    {
+        return $this->loadLocationChildren(
+            $input->getArgument('locationId') ?: self::DEFAULT_LOCATION_ID,
+            abs($input->getOption('depth'))
+        );
+    }
+
+    protected function renderRow(TableHelper $table, $row)
+    {
+        /** @var Location $location */
+        $location = $row['location'];
+
+        $row['depth']       = $location->depth;
+        $row['id']          = $location->id;
+        $row['path']        = $this->generateUrl($location);
+        $row['contentId']   = $location->contentId;
+        $row['name']        = $location->contentInfo->name;
+        $row['contentType'] = $this->loadContentType($location)->identifier;
+        $row['invisible']   = $location->invisible;
+        $row['remoteId']    = $location->remoteId;
+
+        if ($location->depth == 1) {
+            $table->addSeparator();
+        }
+
+        $table->addRow($row);
+    }
+
 }
