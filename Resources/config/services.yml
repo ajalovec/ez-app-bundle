@@ -28,12 +28,35 @@ services:
           - "@ezpublish.api.service.content_type"
 
 
+  ##
+  # Managers
+  #
+  origammi_ezapp.manager.abstract:
+      abstract: true
+      class: Origammi\Bundle\EzAppBundle\Manager\AbstractManager
+      arguments:
+          - "%origammi_ezapp.main_language_code%"
+      calls:
+          - ['setRepository', ['@ezpublish.api.repository']]
+
+  origammi_ezapp.manager.user:
+      parent: origammi_ezapp.manager.abstract
+      class: Origammi\Bundle\EzAppBundle\Manager\UserManager
+
+
+  ##
+  # Services
+  #
   origammi_ezapp.service.language_resolver:
-        class: Origammi\Bundle\EzAppBundle\Service\LanguageResolver
-        arguments:
-            - "@ezpublish.locale.converter"
-            - "@ezpublish.translation_helper"
-            - "@request_stack"
+      class: Origammi\Bundle\EzAppBundle\Service\LanguageResolver
+      arguments:
+          - "%origammi_ezapp.main_language_code%"
+          - "%ezpublish.siteaccesses_by_language%"
+          - "@ezpublish.config.resolver"
+      calls:
+          - ['setSiteAccess', ['@ezpublish.siteaccess']]
+          - ['setLocaleConverter', ['@ezpublish.locale.converter']]
+
 
   origammi_ezapp.service.content_type_resolver:
       class: Origammi\Bundle\EzAppBundle\Service\ContentTypeResolver
@@ -57,6 +80,9 @@ services:
 
 
 
+  ##
+  # Twig helpers
+  #
   origammi_ezapp.twig.content_extension:
       class: Origammi\Bundle\EzAppBundle\Twig\ContentExtension
       arguments:
