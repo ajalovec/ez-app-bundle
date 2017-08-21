@@ -20,13 +20,15 @@ use Symfony\Component\Console\Question\Question;
  */
 class ChangePasswordCommand extends ContainerAwareCommand
 {
+    const COMMAND_NAME = 'origammi:ez:user:change-password';
+
     /**
-     * {@inheritdoc}
+     * Configure command.
      */
     protected function configure()
     {
         $this
-            ->setName('origammi:ez:user:change-password')
+            ->setName(self::COMMAND_NAME)
             ->setDescription('Change the password of a user.')
             ->setDefinition(array(
                 new InputArgument('username', InputArgument::REQUIRED, 'The username'),
@@ -48,8 +50,8 @@ EOT
         $userManager = $this->getContainer()->get('origammi_ezapp.manager.user');
         $username    = $input->getArgument('username');
         $password    = $input->getArgument('password');
-        $user        = $userManager->getService()->loadUserByLogin($username);
 
+        $user = $userManager->getService()->loadUserByLogin($username);
         $userManager->update($user, ['password' => $password]);
 
         $output->writeln(sprintf('Changed password for user <comment>%s</comment>', $username));
