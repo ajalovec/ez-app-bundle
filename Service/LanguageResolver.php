@@ -2,10 +2,11 @@
 
 namespace Origammi\Bundle\EzAppBundle\Service;
 
-use eZ\Publish\Core\Helper\TranslationHelper;
+use eZ\Publish\Core\Base\Exceptions\NotFoundException;
+use eZ\Publish\Core\MVC\ConfigResolverInterface;
 use eZ\Publish\Core\MVC\Symfony\Locale\LocaleConverterInterface;
+use eZ\Publish\Core\MVC\Symfony\SiteAccess;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 
 /**
@@ -17,57 +18,163 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 class LanguageResolver
 {
-    /** @var LocaleConverterInterface */
+    /**
+     * @var string
+     */
+    private $defaultLanguage;
+
+    /**
+     * @var array
+     */
+    private $siteAccessesByLanguage;
+
+    /**
+     * @var SiteAccess
+     */
+    private $siteaccess;
+
+    /**
+     * @var ConfigResolverInterface
+     */
+    private $configResolver;
+
+    /**
+     * @var LocaleConverterInterface
+     */
     private $localeConverter;
 
-    /** @var TranslationHelper */
-    private $translationHelper;
 
-    /** @var RequestStack */
-    private $requestStack;
+    /**
+     * @param string                  $defaultLanguageCode
+     * @param array                   $siteAccessesByLanguage
+     * @param ConfigResolverInterface $configResolver
+     */
+    public function __construct(
+        $defaultLanguageCode,
+        $siteAccessesByLanguage,
+        ConfigResolverInterface $configResolver
+    ) {
+        $this->defaultLanguage        = $defaultLanguageCode;
+        $this->siteAccessesByLanguage = $siteAccessesByLanguage;
+        $this->configResolver         = $configResolver;
+    }
+
+    /**
+     * @param SiteAccess $siteaccess
+     */
+    public function setSiteAccess(SiteAccess $siteaccess)
+    {
+        $this->siteaccess = $siteaccess;
+    }
 
     /**
      * @param LocaleConverterInterface $localeConverter
-     * @param TranslationHelper        $translationHelper
-     * @param RequestStack             $requestStack
      */
-    public function __construct(
-        LocaleConverterInterface $localeConverter,
-        TranslationHelper $translationHelper,
-        RequestStack $requestStack
-    ) {
-        $this->localeConverter   = $localeConverter;
-        $this->translationHelper = $translationHelper;
-        $this->requestStack      = $requestStack;
-    }
-
-    /**
-     * @param Request|null $request
-     *
-     * @return array
-     */
-    public function getCurrentLanguage(Request $request = null)
+    public function setLocaleConverter(LocaleConverterInterface $localeConverter)
     {
-        $locale     = $this->resolveRequest($request)->getLocale();
-        $lang       = $this->localeConverter->convertToEz($locale);
-
-        return [
-            'siteaccess' => $this->translationHelper->getTranslationSiteAccess($lang),
-            'lang'       => $lang,
-            'locale'     => $locale,
-        ];
+        $this->localeConverter = $localeConverter;
     }
 
     /**
+     * @return string
+     */
+    public function getDefaultSiteAccess()
+    {
+        return $this->configResolver->getParameter('default', 'ezsettings', 'siteacess');
+    }
+
+    /**
+     * @param null|string $language
+     *
+     * @return string
+     * @throws NotFoundException
+     */
+    public function getSiteAccess($language = null)
+    {
+        if ($language) {
+            if (strlen($language) <= 5) {
+                $language = $this->localeConverter->convertToEz($language);
+            }
+
+            if (isset($this->siteAccessesByLanguage[$language])) {
+                return $this->siteAccessesByLanguage[$language][0];
+            }
+
+            throw new NotFoundException('%ezpublish.siteaccesses_by_language%', $language);
+        }
+
+        return $this->siteaccess->name;
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return string
+     */
+    public function getSiteAccessFromRequest(Request $request)
+    {
+        return $request->attributes->get('siteaccess')->name;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDefaultLanguage()
+    {
+        return $this->defaultLanguage;
+    }
+
+    /**
+     * @param null|string $siteaccess
+     *
+     * @return string
+     */
+    public function getLanguage($siteaccess = null)
+    {
+        return $this->configResolver->getParameter('languages', null, $siteaccess)[0];
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return string
+     */
+    public function getLanguageFromRequest(Request $request)
+    {
+        return self::getLanguage(self::getSiteAccessFromRequest($request));
+    }
+
+    /**
+     * Returns the list of all available languages, including the ones configured in related SiteAccesses.
+     *
      * @return array
      */
     public function getLanguages()
     {
+        $translationSiteAccesses = array_intersect(
+            $this->configResolver->getParameter('translation_siteaccesses'),
+            $this->configResolver->getParameter('related_siteaccesses')
+        );
+
+        $availableLanguages = [];
+
+        foreach ($translationSiteAccesses as $sa) {
+            $languages = $this->configResolver->getParameter('languages', null, $sa);
+
+            $availableLanguages[$sa] = array_shift($languages);
+        }
+
+        return array_unique($availableLanguages);
+    }
+
+    /**
+     * @return array
+     */
+    public function getLanguagesArray()
+    {
         $languages = [];
 
-        foreach ($this->translationHelper->getAvailableLanguages() as $lang) {
-            $siteaccess = $this->translationHelper->getTranslationSiteAccess($lang);
-
+        foreach ($this->getLanguages() as $siteaccess => $lang) {
             $languages[] = [
                 'siteaccess' => $siteaccess,
                 'lang'       => $lang,
@@ -76,15 +183,5 @@ class LanguageResolver
         }
 
         return $languages;
-    }
-
-    /**
-     * @param Request|null $request
-     *
-     * @return null|Request
-     */
-    private function resolveRequest(Request $request = null)
-    {
-        return $request ?: $this->requestStack->getMasterRequest();
     }
 }

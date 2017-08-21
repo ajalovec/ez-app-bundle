@@ -49,7 +49,7 @@ class LanguageSwitcherController
         return $this->viewController->render(
             $template,
             [
-                'currentLanguage' => $this->languageResolver->getCurrentLanguage($request),
+                'currentLanguage' => $this->languageResolver->getLanguage($request),
                 'languages'       => $this->languageResolver->getLanguages(),
             ]
         );
