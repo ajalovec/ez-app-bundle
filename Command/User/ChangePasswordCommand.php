@@ -3,9 +3,8 @@
  * Copyright (c) 2017.
  */
 
-namespace Origammi\Bundle\EzAppBundle\Command;
+namespace Origammi\Bundle\EzAppBundle\Command\User;
 
-use eZ\Publish\API\Repository\Repository;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,31 +21,10 @@ use Symfony\Component\Console\Question\Question;
 class ChangePasswordCommand extends ContainerAwareCommand
 {
     /**
-     * @var Repository
-     */
-    private $repository;
-
-    /**
-     * @var string
-     */
-    private $username;
-
-    /**
-     * @var string
-     */
-    private $password;
-
-    /**
      * {@inheritdoc}
      */
     protected function configure()
     {
-//        $this
-//            ->setName('origammi:ez:user:change-password')
-//            ->setDescription('Install project content schema.')
-//            ->addOption('list-groups', null, InputOption::VALUE_NONE, 'Use this flag to force installation.')
-//        ;
-
         $this
             ->setName('origammi:ez:user:change-password')
             ->setDescription('Change the password of a user.')
@@ -67,13 +45,14 @@ EOT
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->repository = $this->getContainer()->get('ezpublish.api.repository');
-        $this->username   = $input->getArgument('username');
-        $this->password   = $input->getArgument('password');
+        $userManager = $this->getContainer()->get('origammi_ezapp.manager.user');
+        $username    = $input->getArgument('username');
+        $password    = $input->getArgument('password');
+        $user        = $userManager->getService()->loadUserByLogin($username);
 
-        #TODO: update user
+        $userManager->update($user, ['password' => $password]);
 
-        $output->writeln(sprintf('Changed password for user <comment>%s</comment>', $this->username));
+        $output->writeln(sprintf('Changed password for user <comment>%s</comment>', $username));
     }
 
     /**
