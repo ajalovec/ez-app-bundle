@@ -5,7 +5,6 @@
 
 namespace Origammi\Bundle\EzAppBundle\Command\User;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,7 +17,7 @@ use Symfony\Component\Console\Question\Question;
  * @author    Andraž Jalovec <andraz.jalovec@origammi.co>
  * @copyright 2017 Origammi (http://origammi.co)
  */
-class ChangePasswordCommand extends ContainerAwareCommand
+class ChangePasswordCommand extends BaseCommand
 {
     const COMMAND_NAME = 'origammi:ez:user:change-password';
 
@@ -47,12 +46,12 @@ EOT
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $userManager = $this->getContainer()->get('origammi_ezapp.manager.user');
         $username    = $input->getArgument('username');
         $password    = $input->getArgument('password');
 
-        $user = $userManager->getService()->loadUserByLogin($username);
-        $userManager->update($user, ['password' => $password]);
+        $user = $this->getUserManager()->loaloadUserByLogin($username);
+
+        $this->getUserManager()->update($user, ['password' => $password]);
 
         $output->writeln(sprintf('Changed password for user <comment>%s</comment>', $username));
     }

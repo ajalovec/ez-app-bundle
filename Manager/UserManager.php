@@ -34,7 +34,7 @@ class UserManager extends AbstractManager
      * @return User
      * @throws \Exception
      */
-    public function create(array $data, array $groups, $lang)
+    public function create(array $data, array $groups, $lang = null)
     {
         if (empty($groups)) {
             throw new \Exception('No user groups set to create user in.');
@@ -56,7 +56,7 @@ class UserManager extends AbstractManager
             $data['username'],
             $data['email'],
             $data['password'],
-            $lang,
+            $lang ?: $this->getMainLanguage(),
             $userContentType
         );
         $userCreateStruct->setField('first_name', $data['first_name']);

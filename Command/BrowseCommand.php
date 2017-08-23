@@ -62,6 +62,7 @@ abstract class BrowseCommand extends ContainerAwareCommand
         $this->configureTable($table, $input);
 
         $rows = $this->loadData($this->getRepository(), $input, $output);
+
         foreach ($rows as $k => $row) {
             $this->renderRow($table, $row);
         }
@@ -73,10 +74,10 @@ abstract class BrowseCommand extends ContainerAwareCommand
      * @param TableHelper $table
      * @param mixed       $data
      */
-    protected function renderRow(TableHelper $table, $data)
-    {
-        $table->addRow($data);
-    }
+    abstract protected function renderRow(TableHelper $table, $data);
+//    {
+//        $table->addRow($data);
+//    }
 
     /**
      * @param     $locationId

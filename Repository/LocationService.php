@@ -157,7 +157,7 @@ class LocationService
      * @param Location   $location
      * @param array|null $allowed_content_types
      *
-     * @return array
+     * @return Location[]
      */
     public function findByParent(Location $location, array $allowed_content_types = null)
     {
@@ -174,7 +174,7 @@ class LocationService
      * @param Location   $location
      * @param array|null $allowed_content_types
      *
-     * @return array
+     * @return Location[]
      */
     public function findBySubtree(Location $location, array $allowed_content_types = null)
     {

@@ -17,7 +17,13 @@ use eZ\Publish\Core\Repository\Values\User\UserReference;
  */
 abstract class AbstractManager
 {
-    const ADMIN_USER_ID = 14;
+    const DEFAULT_LANGUAGE_CODE = 'eng-GB';
+    const ADMIN_USER_ID         = 14;
+
+    /**
+     * @var string
+     */
+    private $mainLanguage;
 
     /**
      * @var Repository
@@ -30,6 +36,15 @@ abstract class AbstractManager
      */
     abstract public function getService();
 
+    /**
+     * AbstractManager constructor.
+     *
+     * @param $mainLanguage
+     */
+    public function __construct($mainLanguage)
+    {
+        $this->mainLanguage = $mainLanguage;
+    }
 
     /**
      * @param Repository $repository
@@ -37,7 +52,6 @@ abstract class AbstractManager
     public function setRepository(Repository $repository)
     {
         $this->repository = $repository;
-        $this->setUser(self::ADMIN_USER_ID);
     }
 
     /**
@@ -45,7 +59,16 @@ abstract class AbstractManager
      */
     public function getRepository()
     {
+        $this->setUser(self::ADMIN_USER_ID);
         return $this->repository;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMainLanguage()
+    {
+        return $this->mainLanguage ?: self::DEFAULT_LANGUAGE_CODE;
     }
 
     /**
@@ -82,17 +105,17 @@ abstract class AbstractManager
         });
     }
 
-//    /**
-//     * @param $name
-//     * @param $args
-//     *
-//     * @return mixed
-//     */
-//    public function __call($name, $args)
-//    {
-//        if (method_exists($this->getService(), $name)) {
-//            return call_user_func_array([$this->getService(), $name], $args);
-//        }
-//    }
+    /**
+     * @param $name
+     * @param $args
+     *
+     * @return mixed
+     */
+    public function __call($name, $args)
+    {
+        if (method_exists($this->getService(), $name)) {
+            return call_user_func_array([$this->getService(), $name], $args);
+        }
+    }
 
 }
