@@ -5,7 +5,10 @@
 
 namespace Origammi\Bundle\EzAppBundle\Manager;
 
+use eZ\Publish\API\Repository\UserService;
 use eZ\Publish\API\Repository\Values\User\User;
+use eZ\Publish\API\Repository\Values\User\UserGroup;
+use eZ\Publish\Core\Base\Exceptions\InvalidArgumentException;
 
 /**
  * Class UserManager
@@ -19,7 +22,7 @@ class UserManager extends AbstractManager
     const USER_CONTENT_TYPE = 'user';
 
     /**
-     * @return \eZ\Publish\API\Repository\UserService
+     * @return UserService
      */
     public function getService()
     {
@@ -93,8 +96,30 @@ class UserManager extends AbstractManager
         return $user;
     }
 
-    public function updateGroups(User $user, array $groups)
+    /**
+     * @param User $user
+     *
+     * @return User
+     */
+    public function delete(User $user)
     {
+        $this->getService()->deleteUser($user);
+
+        return $user;
+    }
+
+    /**
+     * @param User  $user
+     * @param array $groups
+     *
+     * @return array
+     * @throws InvalidArgumentException
+     */
+    public function setUserGroups(User $user, array $groups)
+    {
+        if (empty($groups)) {
+            throw new InvalidArgumentException('groups', 'You need to specify at least 1 group id.');
+        }
         $assignedGroups = $this->getService()->loadUserGroupsOfUser($user);
 
         $targetGroupIds = [];
@@ -124,19 +149,63 @@ class UserManager extends AbstractManager
             }
         }
 
-        return $user;
+        return $targetGroupIds;
     }
 
     /**
-     * @param User $user
+     * @param User  $user
+     * @param array $groups
      *
-     * @return User
+     * @return array
      */
-    public function delete(User $user)
+    public function addUserGroups(User $user, array $groups)
     {
-        $this->getService()->deleteUser($user);
+        $assignedGroupIds = array_map(function (UserGroup $userGroup) {
+            return $userGroup->id;
+        }, $this->getService()->loadUserGroupsOfUser($user));
 
-        return $user;
+        $newGroupIds = [];
+        // Assigning groups to the user
+        foreach ($groups as $groupId) {
+            if (false !== array_search($groupId, $assignedGroupIds)) {
+                continue;
+            }
+
+            $groupToAssign = $this->getService()->loadUserGroup($groupId);
+            $newGroupIds[] = $groupToAssign->id;
+
+            $this->getService()->assignUserToUserGroup($user, $groupToAssign);
+        }
+
+        return $newGroupIds;
+    }
+
+    /**
+     * @param User  $user
+     * @param array $groups
+     *
+     * @return array
+     */
+    public function removeUserGroups(User $user, array $groups)
+    {
+        $assignedGroupIds = array_map(function (UserGroup $userGroup) {
+            return $userGroup->id;
+        }, $this->getService()->loadUserGroupsOfUser($user));
+
+        $removedGroupIds = [];
+        // unAssigning groups from the user
+        foreach ($groups as $groupId) {
+            if (false !== array_search($groupId, $assignedGroupIds)) {
+                continue;
+            }
+
+            $groupToUnAssign = $this->getService()->loadUserGroup($groupId);
+            $removedGroupIds[] = $groupToUnAssign->id;
+
+            $this->getService()->unAssignUserFromUserGroup($user, $groupToUnAssign);
+        }
+
+        return $removedGroupIds;
     }
 
 }
