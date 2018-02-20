@@ -35,21 +35,27 @@ class ChangePasswordCommand extends BaseCommand
             ))
             ->setHelp(<<<'EOT'
 The <info>fos:user:change-password</info> command changes the password of a user:
-  <info>php %command.full_name% matthieu</info>
+  <info>php %command.full_name% myusername</info>
 This interactive shell will first ask you for a password.
 You can alternatively specify the password as a second argument:
-  <info>php %command.full_name% matthieu mypassword</info>
+  <info>php %command.full_name% myusername mypassword</info>
 EOT
             )
         ;
     }
 
+    /**
+     * @param InputInterface  $input
+     * @param OutputInterface $output
+     *
+     * @return int|null|void
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $username    = $input->getArgument('username');
         $password    = $input->getArgument('password');
 
-        $user = $this->getUserManager()->loaloadUserByLogin($username);
+        $user = $this->getUserManager()->loadUserByLogin($username);
 
         $this->getUserManager()->update($user, ['password' => $password]);
 
@@ -57,7 +63,8 @@ EOT
     }
 
     /**
-     * {@inheritdoc}
+     * @param InputInterface  $input
+     * @param OutputInterface $output
      */
     protected function interact(InputInterface $input, OutputInterface $output)
     {
