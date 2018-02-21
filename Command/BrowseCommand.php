@@ -36,6 +36,7 @@ abstract class BrowseCommand extends ContainerAwareCommand
      */
     private $loadedContentTypes = [];
 
+
     /**
      * @param TableHelper    $table
      * @param InputInterface $input
@@ -43,6 +44,14 @@ abstract class BrowseCommand extends ContainerAwareCommand
      * @return void
      */
     abstract protected function configureTable(TableHelper $table, InputInterface $input);
+
+
+    /**
+     * @param TableHelper $table
+     * @param mixed       $data
+     */
+    abstract protected function renderRow(TableHelper $table, $data);
+
 
     /**
      * @param Repository      $repository
@@ -59,6 +68,8 @@ abstract class BrowseCommand extends ContainerAwareCommand
         $this->output = $output;
 
         $table = new TableHelper(TableHelper::STYLE_SIMPLE);
+//        $table = new Table($output);
+
         $this->configureTable($table, $input);
 
         $rows = $this->loadData($this->getRepository(), $input, $output);
@@ -70,14 +81,6 @@ abstract class BrowseCommand extends ContainerAwareCommand
         $table->render($output);
     }
 
-    /**
-     * @param TableHelper $table
-     * @param mixed       $data
-     */
-    abstract protected function renderRow(TableHelper $table, $data);
-//    {
-//        $table->addRow($data);
-//    }
 
     /**
      * @param     $locationId
@@ -142,7 +145,7 @@ abstract class BrowseCommand extends ContainerAwareCommand
      */
     final protected function generateUrl(Location $location)
     {
-        return $this->getContainer()->get('router')->generate('ez_urlalias', ['locationId' => $location->id]);
+        return $this->getContainer()->get('router')->generate('ez_urlalias', [ 'locationId' => $location->id ]);
     }
 
     /**
