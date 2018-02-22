@@ -5,7 +5,7 @@
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
-use Origammi\Bundle\EzAppBundle\Repository\ContentService;
+use Origammi\Bundle\EzAppBundle\Repository\ContentApiService;
 
 /**
  * Trait ContentServiceInterface
@@ -16,7 +16,7 @@ use Origammi\Bundle\EzAppBundle\Repository\ContentService;
 interface ContentServiceInterface
 {
     /**
-     * @param ContentService|null $contentService
+     * @param ContentApiService|null $contentService
      */
-    public function setContentService(ContentService $contentService = null);
+    public function setContentService(ContentApiService $contentService = null);
 }

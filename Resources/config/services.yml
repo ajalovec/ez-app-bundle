@@ -1,29 +1,31 @@
-services:
+parameters:
+  origammi.ez_app.manager.admin_user.id: 14
 
-  origammi_ezapp.api:
+services:
+  origammi.ez_app.repository.api:
       class: Origammi\Bundle\EzAppBundle\Repository\ApiService
       arguments:
           - "@ezpublish.query_type.registry"
       calls:
           - [setSearchService, ["@ezpublish.api.service.search"]]
-          - [setLocationService, ["@origammi_ezapp.api.location"]]
-          - [setContentService, ["@origammi_ezapp.api.content"]]
-          - [setContentTypeService, ["@origammi_ezapp.api.content_type"]]
+          - [setLocationService, ["@origammi.ez_app.repository.location_api"]]
+          - [setContentService, ["@origammi.ez_app.repository.content_api"]]
+          - [setContentTypeService, ["@origammi.ez_app.repository.content_type_api"]]
 
-  origammi_ezapp.api.content:
-      class: Origammi\Bundle\EzAppBundle\Repository\ContentService
+  origammi.ez_app.repository.content_api:
+      class: Origammi\Bundle\EzAppBundle\Repository\ContentApiService
       arguments:
           - "@ezpublish.api.service.content"
           - "@ezpublish.api.service.search"
 
-  origammi_ezapp.api.location:
-      class: Origammi\Bundle\EzAppBundle\Repository\LocationService
+  origammi.ez_app.repository.location_api:
+      class: Origammi\Bundle\EzAppBundle\Repository\LocationApiService
       arguments:
           - "@ezpublish.api.service.location"
           - "@ezpublish.api.service.search"
 
-  origammi_ezapp.api.content_type:
-      class: Origammi\Bundle\EzAppBundle\Repository\ContentTypeService
+  origammi.ez_app.repository.content_type_api:
+      class: Origammi\Bundle\EzAppBundle\Repository\ContentTypeApiService
       arguments:
           - "@ezpublish.api.service.content_type"
 
@@ -31,26 +33,27 @@ services:
   ##
   # Managers
   #
-  origammi_ezapp.manager.abstract:
+  origammi.ez_app.manager.abstract:
       abstract: true
       class: Origammi\Bundle\EzAppBundle\Manager\AbstractManager
       arguments:
-          - "%origammi_ezapp.main_language_code%"
+          - "%origammi.ez_app.manager.admin_user.id%"
+          - "%origammi.ez_app.main_language_code%"
       calls:
           - ['setRepository', ['@ezpublish.api.repository']]
 
-  origammi_ezapp.manager.user:
-      parent: origammi_ezapp.manager.abstract
+  origammi.ez_app.manager.user:
+      parent: origammi.ez_app.manager.abstract
       class: Origammi\Bundle\EzAppBundle\Manager\UserManager
 
 
   ##
   # Services
   #
-  origammi_ezapp.service.language_resolver:
+  origammi.ez_app.service.language_resolver:
       class: Origammi\Bundle\EzAppBundle\Service\LanguageResolver
       arguments:
-          - "%origammi_ezapp.main_language_code%"
+          - "%origammi.ez_app.main_language_code%"
           - "%ezpublish.siteaccesses_by_language%"
           - "@ezpublish.config.resolver"
       calls:
@@ -58,12 +61,12 @@ services:
           - ['setLocaleConverter', ['@ezpublish.locale.converter']]
 
 
-  origammi_ezapp.service.content_type_resolver:
+  origammi.ez_app.service.content_type_resolver:
       class: Origammi\Bundle\EzAppBundle\Service\ContentTypeResolver
       arguments:
-          - "@origammi_ezapp.api.content_type"
+          - "@origammi.ez_app.repository.content_type_api"
 
-  origammi_ezapp.service.field_resolver:
+  origammi.ez_app.service.field_resolver:
       class: Origammi\Bundle\EzAppBundle\Service\FieldResolver
       arguments:
           - "@ezpublish.field_helper"
@@ -72,10 +75,10 @@ services:
           - "@ezpublish.translation_helper"
 
 
-  origammi_ezapp.service.location_resolver:
+  origammi.ez_app.service.location_resolver:
       class: Origammi\Bundle\EzAppBundle\Service\LocationResolver
       arguments:
-          - "@origammi_ezapp.api.location"
+          - "@origammi.ez_app.repository.location_api"
           - "@ezpublish.templating.global_helper"
 
 
@@ -83,16 +86,23 @@ services:
   ##
   # Twig helpers
   #
-  origammi_ezapp.twig.content_extension:
+
+  origammi.ez_app.twig.extension.core:
+      class: Origammi\Bundle\EzAppBundle\Twig\Extension\CoreExtension
+      arguments: ["@origammi.ez_app.repository.content_api"]
+      tags:
+          - {name: twig.extension}
+
+  origammi.ez_app.twig.content_extension:
       class: Origammi\Bundle\EzAppBundle\Twig\ContentExtension
       arguments:
-        - '@origammi_ezapp.service.content_type_resolver'
-        - '@origammi_ezapp.api'
-        - '@origammi_ezapp.service.field_resolver'
+        - '@origammi.ez_app.service.content_type_resolver'
+        - '@origammi.ez_app.repository.api'
+        - '@origammi.ez_app.service.field_resolver'
       tags:
           - { name: twig.extension }
 
-#  origammi_ezapp.service.global_helper:
+#  origammi.ez_app.service.global_helper:
 #          class: Origammi\Bundle\EzAppBundle\Service\GlobalHelper
 #          arguments:
 #            - "@ezpublish.config.resolver"
@@ -106,8 +116,8 @@ services:
   ##
   # Controllers
   #
-  origammi_ezapp.controller.language_switcher:
+  origammi.ez_app.controller.language_switcher:
           class: Origammi\Bundle\EzAppBundle\Controller\LanguageSwitcherController
           arguments:
-              - "@origammi_ezapp.service.language_resolver"
+              - "@origammi.ez_app.service.language_resolver"
               - "@ezpublish.controller.content.view"

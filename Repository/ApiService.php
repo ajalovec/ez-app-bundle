@@ -12,15 +12,15 @@ use eZ\Publish\API\Repository\Values\Content\Query;
 use eZ\Publish\API\Repository\Values\Content\Search\SearchResult;
 use eZ\Publish\Core\QueryType\QueryType;
 use eZ\Publish\Core\QueryType\QueryTypeRegistry;
-use Origammi\Bundle\EzAppBundle\Service\Traits\ContentServiceInterface;
-use Origammi\Bundle\EzAppBundle\Service\Traits\ContentServiceTrait;
-use Origammi\Bundle\EzAppBundle\Service\Traits\ContentTypeServiceInterface;
-use Origammi\Bundle\EzAppBundle\Service\Traits\ContentTypeServiceTrait;
-use Origammi\Bundle\EzAppBundle\Service\Traits\LocationServiceInterface;
-use Origammi\Bundle\EzAppBundle\Service\Traits\LocationServiceTrait;
-use Origammi\Bundle\EzAppBundle\Service\Traits\RepositoryServiceTrait;
-use Origammi\Bundle\EzAppBundle\Service\Traits\SearchServiceInterface;
-use Origammi\Bundle\EzAppBundle\Service\Traits\SearchServiceTrait;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\ContentServiceInterface;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\ContentServiceTrait;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\ContentTypeServiceInterface;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\ContentTypeServiceTrait;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\LocationServiceInterface;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\LocationServiceTrait;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\RepositoryServiceTrait;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\SearchServiceInterface;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\SearchServiceTrait;
 
 /**
  * Class ApiService
@@ -55,6 +55,8 @@ class ApiService implements SearchServiceInterface, LocationServiceInterface, Co
     /**
      * @param $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Location|Location[]
      */
     public function loadLocation($id)
@@ -65,6 +67,8 @@ class ApiService implements SearchServiceInterface, LocationServiceInterface, Co
     /**
      * @param $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Content|Content[]
      */
     public function loadContent($id)
@@ -77,6 +81,8 @@ class ApiService implements SearchServiceInterface, LocationServiceInterface, Co
      * @param array                  $parameters
      * @param bool                   $fetchArray
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Location[]|SearchResult
      */
     public function findLocations($queryType, array $parameters = [], $fetchArray = false)
@@ -92,12 +98,14 @@ class ApiService implements SearchServiceInterface, LocationServiceInterface, Co
      * @param array                  $parameters
      * @param bool                   $fetchArray
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Content[]|SearchResult
      */
     public function findContent($queryType, array $parameters = [], $fetchArray = false)
     {
         $query = $this->createQuery($queryType, $parameters);
-        $data  = $this->contentService->query($query, $fetchArray);
+        $data  = $this->contentService->search($query, $fetchArray);
 
         return $data;
     }

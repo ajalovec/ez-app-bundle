@@ -5,7 +5,7 @@
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
-use Origammi\Bundle\EzAppBundle\Repository\ContentService;
+use Origammi\Bundle\EzAppBundle\Repository\ContentApiService;
 
 /**
  * Trait ContentServiceTrait
@@ -16,20 +16,20 @@ use Origammi\Bundle\EzAppBundle\Repository\ContentService;
 trait ContentServiceTrait
 {
     /**
-     * @var ContentService
+     * @var ContentApiService
      */
     protected $contentService;
 
     /**
-     * @param ContentService|null $contentService
+     * @param ContentApiService|null $contentService
      */
-    public function setContentService(ContentService $contentService = null)
+    public function setContentService(ContentApiService $contentService = null)
     {
         $this->contentService = $contentService;
     }
 
     /**
-     * @return ContentService
+     * @return ContentApiService
      */
     public function getContentService()
     {

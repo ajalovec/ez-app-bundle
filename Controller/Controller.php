@@ -44,7 +44,7 @@ abstract class Controller extends BaseController
      */
     protected function getContentTypeResolver()
     {
-        return $this->container->get('origammi_ezapp.service.content_type_resolver');
+        return $this->container->get('origammi.ez_app.service.content_type_resolver');
     }
 
     /**
@@ -52,7 +52,7 @@ abstract class Controller extends BaseController
      */
     protected function getApiRepository()
     {
-        return $this->container->get('origammi_ezapp.api');
+        return $this->container->get('origammi.ez_app.repository.api');
     }
 
     /**
@@ -60,7 +60,7 @@ abstract class Controller extends BaseController
      */
     protected function getFieldResolver()
     {
-        return $this->container->get('origammi_ezapp.service.field_resolver');
+        return $this->container->get('origammi.ez_app.service.field_resolver');
     }
 
     /**
@@ -68,7 +68,7 @@ abstract class Controller extends BaseController
      */
     protected function getLocationResolver()
     {
-        return $this->container->get('origammi_ezapp.service.location_resolver');
+        return $this->container->get('origammi.ez_app.service.location_resolver');
     }
 
     /**
@@ -76,7 +76,7 @@ abstract class Controller extends BaseController
      */
     protected function getLanguageResolver()
     {
-        return $this->container->get('origammi_ezapp.service.language_resolver');
+        return $this->container->get('origammi.ez_app.service.language_resolver');
     }
 
 }

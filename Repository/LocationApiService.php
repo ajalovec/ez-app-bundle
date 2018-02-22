@@ -5,19 +5,19 @@
 
 namespace Origammi\Bundle\EzAppBundle\Repository;
 
-use eZ\Publish\API\Repository\Exceptions\PropertyNotFoundException;
-use eZ\Publish\API\Repository\Exceptions\PropertyReadOnlyException;
-use eZ\Publish\API\Repository\LocationService as BaseLocationService;
+use eZ\Publish\API\Repository\LocationService;
 use eZ\Publish\API\Repository\SearchService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Location;
+use eZ\Publish\API\Repository\Values\Content\LocationList;
 use eZ\Publish\API\Repository\Values\Content\LocationQuery;
+use eZ\Publish\API\Repository\Values\Content\Query;
 use eZ\Publish\API\Repository\Values\Content\Query\Criterion;
 use eZ\Publish\API\Repository\Values\Content\Search\SearchResult;
 use eZ\Publish\SPI\Persistence\Content\VersionInfo;
 use Origammi\Bundle\EzAppBundle\QueryType\Core\QueryFactory;
-use Origammi\Bundle\EzAppBundle\Traits\OrigammiEzRepositoryTrait;
+use Origammi\Bundle\EzAppBundle\Utils\RepositoryUtil;
 
 /**
  * Class LocationService
@@ -26,12 +26,10 @@ use Origammi\Bundle\EzAppBundle\Traits\OrigammiEzRepositoryTrait;
  * @author    Andraž Jalovec <andraz.jalovec@origammi.co>
  * @copyright 2017 Origammi AG (http://origammi.co)
  */
-class LocationService
+class LocationApiService
 {
-    use OrigammiEzRepositoryTrait;
-
     /**
-     * @var BaseLocationService
+     * @var LocationService
      */
     protected $locationService;
 
@@ -43,36 +41,24 @@ class LocationService
     /**
      * LocationService constructor.
      *
-     * @param BaseLocationService $locationService
+     * @param LocationService $locationService
      * @param SearchService       $searchService
      */
-    public function __construct(BaseLocationService $locationService, SearchService $searchService)
+    public function __construct(LocationService $locationService, SearchService $searchService)
     {
         $this->locationService = $locationService;
         $this->searchService   = $searchService;
     }
 
-//    public function __call($name, $arguments)
-//    {
-//        if (method_exists($this->locationService, $name)) {
-//            return call_user_func_array([$this->locationService, $name], $arguments);
-//        }
-//    }
 
-    public function __get($property)
+    /**
+     * @return LocationService
+     */
+    public function getService()
     {
-        switch ($property) {
-            case 'api':
-                return $this->locationService;
-        }
-
-        throw new PropertyNotFoundException($property, get_class($this));
+        return $this->locationService;
     }
 
-    public function __set($property, $value)
-    {
-        throw new PropertyReadOnlyException($property, get_class($this));
-    }
 
     /**
      * Try to resolve Location object from mixed $id argument
@@ -83,6 +69,8 @@ class LocationService
      *
      * @param Content|Location|VersionInfo|ContentInfo|int|string $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Location|Location[]
      */
     public function load($id)
@@ -100,7 +88,7 @@ class LocationService
             return $id;
         }
 
-        if ($primaryId = $this->resolveLocationId($id)) {
+        if ($primaryId = RepositoryUtil::resolveLocationId($id)) {
             return $this->loadById($primaryId);
         }
 
@@ -110,6 +98,8 @@ class LocationService
     /**
      * @param int $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Location
      */
     public function loadById($id)
@@ -120,6 +110,8 @@ class LocationService
     /**
      * @param string $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Location
      */
     public function loadByRemoteId($id)
@@ -128,13 +120,16 @@ class LocationService
     }
 
     /**
-     * @param array|SearchResult $ids
+     * Loads Location objects for given
      *
+     * @param Content|Location|VersionInfo|ContentInfo|string|int|array|SearchResult|LocationList $ids
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @return Location[]
      */
-    public function find($ids)
+    public function findByIds($ids)
     {
-        $locationIds = $this->resolveLocationIds($ids);
+        $locationIds = RepositoryUtil::resolveLocationIds($ids);
 
         $queryFactory = QueryFactory::create()
             ->addFilter(new Criterion\LocationId($locationIds))
@@ -157,6 +152,9 @@ class LocationService
      * @param Location   $location
      * @param array|null $allowed_content_types
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
+     * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Location[]
      */
     public function findByParent(Location $location, array $allowed_content_types = null)
@@ -164,8 +162,8 @@ class LocationService
         $queryFactory = QueryFactory::create()
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\ParentLocationId($location->id))
-            ->setAllowedContentTypes($allowed_content_types);
-        ;
+            ->setAllowedContentTypes($allowed_content_types)
+        ;;
 
         return $this->query($queryFactory->createLocationQuery(), true);
     }
@@ -174,6 +172,9 @@ class LocationService
      * @param Location   $location
      * @param array|null $allowed_content_types
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
+     * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Location[]
      */
     public function findBySubtree(Location $location, array $allowed_content_types = null)
@@ -184,8 +185,32 @@ class LocationService
             ->addSorts($location->getSortClauses())
             ->addFilter(new Criterion\Subtree($location->pathString))
             ->addFilter(new Criterion\Location\Depth(Criterion\Operator::GT, $location->depth))
-            ->setAllowedContentTypes($allowed_content_types);
-        ;
+            ->setAllowedContentTypes($allowed_content_types)
+        ;;
+
+        return $this->query($queryFactory->createLocationQuery(), true);
+    }
+
+
+    /**
+     * @param string|array $allowed_content_type
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
+     * @return Location[]
+     */
+    public function findByContentType($allowed_content_type)
+    {
+        if (!is_array($allowed_content_type)) {
+            $allowed_content_type = [ (string)$allowed_content_type ];
+        }
+
+        $queryFactory = QueryFactory::create()
+            ->addSort(new Query\SortClause\Location\Path(Query::SORT_ASC))
+//            ->addSort(new Query\SortClause\Location\Priority(Query::SORT_ASC))
+            ->addFilter(new Criterion\Location\Depth(Criterion\Operator::GT, 1))
+            ->setAllowedContentTypes($allowed_content_type)
+        ;;
 
         return $this->query($queryFactory->createLocationQuery(), true);
     }
@@ -194,6 +219,8 @@ class LocationService
      * @param LocationQuery $query
      * @param bool          $fetchArray
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Location[]|SearchResult
      */
     public function query(LocationQuery $query, $fetchArray = false)
@@ -201,7 +228,7 @@ class LocationService
         $searchResult = $this->searchService->findLocations($query);
 
         if (true === $fetchArray) {
-            return $this->searchResultToArray($searchResult);
+            return RepositoryUtil::searchResultToArray($searchResult);
         }
 
         return $searchResult;

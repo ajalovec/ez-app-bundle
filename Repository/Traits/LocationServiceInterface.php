@@ -5,7 +5,7 @@
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
-use Origammi\Bundle\EzAppBundle\Repository\LocationService;
+use Origammi\Bundle\EzAppBundle\Repository\LocationApiService;
 
 /**
  * Trait ContentServiceInterface
@@ -16,7 +16,7 @@ use Origammi\Bundle\EzAppBundle\Repository\LocationService;
 interface LocationServiceInterface
 {
     /**
-     * @param LocationService|null $locationService
+     * @param LocationApiService|null $locationService
      */
-    public function setLocationService(LocationService $locationService = null);
+    public function setLocationService(LocationApiService $locationService = null);
 }

@@ -5,14 +5,14 @@
 
 namespace Origammi\Bundle\EzAppBundle\Repository;
 
-use eZ\Publish\API\Repository\ContentTypeService as BaseContentTypeService;
+use eZ\Publish\API\Repository\ContentTypeService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\API\Repository\Values\ContentType\ContentType;
 use eZ\Publish\API\Repository\Values\ContentType\ContentTypeGroup;
 use eZ\Publish\SPI\Persistence\Content\VersionInfo;
-use Origammi\Bundle\EzAppBundle\Traits\OrigammiEzRepositoryTrait;
+use Origammi\Bundle\EzAppBundle\Utils\RepositoryUtil;
 
 /**
  * Class ContentTypeService
@@ -21,23 +21,29 @@ use Origammi\Bundle\EzAppBundle\Traits\OrigammiEzRepositoryTrait;
  * @author    Andraž Jalovec <andraz.jalovec@origammi.co>
  * @copyright 2017 Origammi AG (http://origammi.co)
  */
-class ContentTypeService
+class ContentTypeApiService
 {
-    use OrigammiEzRepositoryTrait;
-
     /**
-     * @var BaseContentTypeService
+     * @var ContentTypeService
      */
     protected $contentTypeService;
 
     /**
      * ContentService constructor.
      *
-     * @param BaseContentTypeService $contentTypeService
+     * @param ContentTypeService $contentTypeService
      */
-    public function __construct(BaseContentTypeService $contentTypeService)
+    public function __construct(ContentTypeService $contentTypeService)
     {
         $this->contentTypeService = $contentTypeService;
+    }
+
+    /**
+     * @return ContentTypeService
+     */
+    public function getService()
+    {
+        return $this->contentTypeService;
     }
 
     /**
@@ -49,6 +55,7 @@ class ContentTypeService
      *
      * @param Location|VersionInfo|ContentInfo|int|string $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return ContentType
      */
     public function load($id)
@@ -73,27 +80,20 @@ class ContentTypeService
      *
      * @param int|string|ContentTypeGroup $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return ContentType[]
      */
     public function loadByGroup($id)
     {
-        if (static::isPrimaryId($id)) {
+        if (RepositoryUtil::isPrimaryId($id)) {
             $id = $this->contentTypeService->loadContentTypeGroup((int)$id);
-        }
-        elseif (is_string($id)) {
+        } elseif (is_string($id)) {
             $id = $this->contentTypeService->loadContentTypeGroupByIdentifier($id);
         }
 
         return $this->contentTypeService->loadContentTypes($id);
     }
 
-    /**
-     * @return ContentTypeGroup[]
-     */
-    public function loadAllGroups()
-    {
-        return $this->contentTypeService->loadContentTypeGroups();
-    }
 
     /**
      * Try to resolve ContentType id from mixed $id argument
@@ -119,7 +119,7 @@ class ContentTypeService
             return $object->contentTypeId;
         }
 
-        if (static::isPrimaryId($object)) {
+        if (RepositoryUtil::isPrimaryId($object)) {
             return (int)$object;
         }
 

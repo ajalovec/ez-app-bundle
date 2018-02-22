@@ -5,7 +5,7 @@
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
-use Origammi\Bundle\EzAppBundle\Repository\LocationService;
+use Origammi\Bundle\EzAppBundle\Repository\LocationApiService;
 
 /**
  * Trait LocationServiceTrait
@@ -16,20 +16,20 @@ use Origammi\Bundle\EzAppBundle\Repository\LocationService;
 trait LocationServiceTrait
 {
     /**
-     * @var LocationService
+     * @var LocationApiService
      */
     protected $locationService;
 
     /**
-     * @param LocationService|null $locationService
+     * @param LocationApiService|null $locationService
      */
-    public function setLocationService(LocationService $locationService = null)
+    public function setLocationService(LocationApiService $locationService = null)
     {
         $this->locationService = $locationService;
     }
 
     /**
-     * @return LocationService
+     * @return LocationApiService
      */
     public function getLocationService()
     {

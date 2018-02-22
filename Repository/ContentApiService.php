@@ -5,19 +5,18 @@
 
 namespace Origammi\Bundle\EzAppBundle\Repository;
 
-use eZ\Publish\API\Repository\ContentService as BaseContentService;
-use eZ\Publish\API\Repository\Exceptions\PropertyNotFoundException;
-use eZ\Publish\API\Repository\Exceptions\PropertyReadOnlyException;
+use eZ\Publish\API\Repository\ContentService;
 use eZ\Publish\API\Repository\SearchService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Location;
+use eZ\Publish\API\Repository\Values\Content\LocationList;
 use eZ\Publish\API\Repository\Values\Content\Query;
 use eZ\Publish\API\Repository\Values\Content\Query\Criterion;
 use eZ\Publish\API\Repository\Values\Content\Search\SearchResult;
 use eZ\Publish\API\Repository\Values\Content\VersionInfo;
 use Origammi\Bundle\EzAppBundle\QueryType\Core\QueryFactory;
-use Origammi\Bundle\EzAppBundle\Traits\OrigammiEzRepositoryTrait;
+use Origammi\Bundle\EzAppBundle\Utils\RepositoryUtil;
 
 /**
  * Class ContentService
@@ -26,12 +25,10 @@ use Origammi\Bundle\EzAppBundle\Traits\OrigammiEzRepositoryTrait;
  * @author    Andraž Jalovec <andraz.jalovec@origammi.co>
  * @copyright 2017 Origammi AG (http://origammi.co)
  */
-class ContentService
+class ContentApiService
 {
-    use OrigammiEzRepositoryTrait;
-
     /**
-     * @var BaseContentService
+     * @var ContentService
      */
     protected $contentService;
 
@@ -43,29 +40,23 @@ class ContentService
     /**
      * ContentService constructor.
      *
-     * @param BaseContentService $contentService
+     * @param ContentService $contentService
      * @param SearchService      $searchService
      */
-    public function __construct(BaseContentService $contentService, SearchService $searchService)
+    public function __construct(ContentService $contentService, SearchService $searchService)
     {
         $this->contentService = $contentService;
         $this->searchService  = $searchService;
     }
 
-    public function __get($property)
+    /**
+     * @return ContentService
+     */
+    public function getService()
     {
-        switch ($property) {
-            case 'api':
-                return $this->locationService;
-        }
-
-        throw new PropertyNotFoundException($property, get_class($this));
+        return $this->contentService;
     }
 
-    public function __set($property, $value)
-    {
-        throw new PropertyReadOnlyException($property, get_class($this));
-    }
 
     /**
      * Try to resolve Content object from mixed $id argument
@@ -73,9 +64,12 @@ class ContentService
      *  id        - int|string
      *  remote_id - string
      *  object    - Content|Location|VersionInfo|ContentInfo
+     *  array     - array of above types
      *
      * @param Content|Location|VersionInfo|ContentInfo|int|string|array $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Content|Content[]
      */
     public function load($id)
@@ -93,69 +87,22 @@ class ContentService
             return $id;
         }
 
-        if ($id instanceof Location || $id instanceof VersionInfo) {
-            $id = $id->contentInfo;
+        if ($primaryId = RepositoryUtil::resolveContentId($id)) {
+            return $this->contentService->loadContent($primaryId);
         }
 
-        if ($id instanceof ContentInfo) {
-            return $this->loadByContentInfo($id);
-        }
-
-        if ($primaryId = $this->resolveContentId($id)) {
-            return $this->loadById($primaryId);
-        }
-
-        return $this->loadByRemoteId((string)$id);
-    }
-
-    /**
-     * @param int $id
-     *
-     * @return Content
-     */
-    public function loadById($id)
-    {
-        return $this->contentService->loadContent((int)$id);
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return Content
-     */
-    public function loadByRemoteId($id)
-    {
         return $this->contentService->loadContentByRemoteId((string)$id);
     }
 
     /**
-     * @param ContentInfo $contentInfo
+     * @param array|SearchResult|LocationList $ids
      *
-     * @return Content
-     */
-    public function loadByContentInfo(ContentInfo $contentInfo)
-    {
-        return $this->contentService->loadContentByContentInfo($contentInfo);
-    }
-
-    /**
-     * @param VersionInfo $versionInfo
-     *
-     * @return Content
-     */
-    public function loadByVersionInfo(VersionInfo $versionInfo)
-    {
-        return $this->contentService->loadContentByVersionInfo($versionInfo);
-    }
-
-    /**
-     * @param array|SearchResult $ids
-     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @return Content[]
      */
-    public function find($ids)
+    public function findByIds($ids)
     {
-        $contentIds = $this->resolveContentIds($ids);
+        $contentIds = RepositoryUtil::resolveContentIds($ids);
 
         $queryFactory = QueryFactory::create()
             ->addFilter(new Criterion\ContentId($contentIds))
@@ -178,6 +125,8 @@ class ContentService
      * @param Location   $location
      * @param array|null $allowed_content_types List of contentTypeIdentifiers to whitelist
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @return Content[]
      */
     public function findByParent(Location $location, array $allowed_content_types = null)
@@ -185,18 +134,20 @@ class ContentService
         $queryFactory = QueryFactory::create()
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\ParentLocationId($location->id))
-            ->setAllowedContentTypes($allowed_content_types);
-        ;
+            ->setAllowedContentTypes($allowed_content_types)
+        ;;
 
         $searchResult = $this->searchService->findLocations($queryFactory->createLocationQuery());
 
-        return $this->find($searchResult);
+        return $this->findByIds($searchResult);
     }
 
     /**
      * @param Location   $location
      * @param array|null $allowed_content_types List of contentTypeIdentifiers to whitelist
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @return Content[]
      */
     public function findBySubtree(Location $location, array $allowed_content_types = null)
@@ -205,26 +156,28 @@ class ContentService
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\Subtree($location->pathString))
             ->addFilter(new Criterion\Location\Depth(Criterion\Operator::GT, $location->depth))
-            ->setAllowedContentTypes($allowed_content_types);
-        ;
+            ->setAllowedContentTypes($allowed_content_types)
+        ;;
 
         $searchResult = $this->searchService->findLocations($queryFactory->createLocationQuery());
 
-        return $this->find($searchResult);
+        return $this->findByIds($searchResult);
     }
 
     /**
      * @param Query $query
      * @param bool  $fetchArray
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Content[]|SearchResult
      */
-    public function query(Query $query, $fetchArray = false)
+    public function search(Query $query, $fetchArray = false)
     {
         $searchResult = $this->searchService->findContent($query);
 
         if (true === $fetchArray) {
-            return $this->searchResultToArray($searchResult);
+            return RepositoryUtil::searchResultToArray($searchResult);
         }
 
         return $searchResult;
