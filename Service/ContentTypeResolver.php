@@ -9,8 +9,7 @@ use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\API\Repository\Values\ContentType\ContentType;
-use Origammi\Bundle\EzAppBundle\Repository\ContentTypeService;
-use Origammi\Bundle\EzAppBundle\Traits\OrigammiEzRepositoryTrait;
+use Origammi\Bundle\EzAppBundle\Repository\ContentTypeApiService;
 
 /**
  * Class ContentTypeResolver
@@ -21,8 +20,6 @@ use Origammi\Bundle\EzAppBundle\Traits\OrigammiEzRepositoryTrait;
  */
 class ContentTypeResolver
 {
-    use OrigammiEzRepositoryTrait;
-
     /**
      * @var ContentType[]
      */
@@ -34,14 +31,14 @@ class ContentTypeResolver
     private $loadedTypesIdentifiers = [];
 
     /**
-     * @var ContentTypeService
+     * @var ContentTypeApiService
      */
     private $contentTypeService;
 
     /**
-     * @param ContentTypeService $contentTypeService
+     * @param ContentTypeApiService $contentTypeService
      */
-    public function __construct(ContentTypeService $contentTypeService)
+    public function __construct(ContentTypeApiService $contentTypeService)
     {
         $this->contentTypeService = $contentTypeService;
     }
@@ -49,6 +46,7 @@ class ContentTypeResolver
     /**
      * @param int|string|Location|ContentInfo|Content $contentType Can be either id, identifier, Location, ContentInfo or Content object
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return ContentType
      */
     public function getContentType($contentType)
@@ -57,7 +55,7 @@ class ContentTypeResolver
 
         if (is_scalar($contentType)) {
             if (is_string($contentType) && isset($this->loadedTypesIdentifiers[$contentType])) {
-                $contentType =  $this->loadedTypesIdentifiers[$contentType];
+                $contentType = $this->loadedTypesIdentifiers[$contentType];
             }
 
             if (isset($this->loadedTypes[$contentType])) {
@@ -77,6 +75,7 @@ class ContentTypeResolver
      * @param string|array                     $identifier
      * @param int|Location|ContentInfo|Content $content Can be either id, Location, ContentInfo or Content object
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return bool
      */
     public function isContentType($identifier, $content)

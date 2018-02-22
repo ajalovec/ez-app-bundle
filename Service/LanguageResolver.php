@@ -84,26 +84,30 @@ class LanguageResolver
     }
 
     /**
+     * @return string
+     */
+    public function getSiteAccess()
+    {
+        return $this->siteaccess->name;
+    }
+
+    /**
      * @param null|string $language
      *
-     * @return string
+     * @return mixed
      * @throws NotFoundException
      */
-    public function getSiteAccess($language = null)
+    public function getSiteAccessForLanguage($language)
     {
-        if ($language) {
-            if (strlen($language) <= 5) {
-                $language = $this->localeConverter->convertToEz($language);
-            }
+        if (strlen($language) <= 5) {
+            $language = $this->localeConverter->convertToEz($language);
+        }
 
-            if (isset($this->siteAccessesByLanguage[$language])) {
-                return $this->siteAccessesByLanguage[$language][0];
-            }
-
+        if (!isset($this->siteAccessesByLanguage[$language])) {
             throw new NotFoundException('%ezpublish.siteaccesses_by_language%', $language);
         }
 
-        return $this->siteaccess->name;
+        return $this->siteAccessesByLanguage[$language][0];
     }
 
     /**
@@ -111,7 +115,7 @@ class LanguageResolver
      *
      * @return string
      */
-    public function getSiteAccessFromRequest(Request $request)
+    public function getSiteAccessForRequest(Request $request)
     {
         return $request->attributes->get('siteaccess')->name;
     }
@@ -125,11 +129,19 @@ class LanguageResolver
     }
 
     /**
+     * @return string
+     */
+    public function getLanguage()
+    {
+        return $this->configResolver->getParameter('languages')[0];
+    }
+
+    /**
      * @param null|string $siteaccess
      *
      * @return string
      */
-    public function getLanguage($siteaccess = null)
+    public function getLanguageForSiteAccess($siteaccess = null)
     {
         return $this->configResolver->getParameter('languages', null, $siteaccess)[0];
     }
@@ -139,9 +151,35 @@ class LanguageResolver
      *
      * @return string
      */
-    public function getLanguageFromRequest(Request $request)
+    public function getLanguageForRequest(Request $request)
     {
-        return self::getLanguage(self::getSiteAccessFromRequest($request));
+        return self::getLanguageForSiteAccess(self::getSiteAccessForRequest($request));
+    }
+
+    /**
+     * Returns the list of all available languages, including the ones configured in related SiteAccesses.
+     *
+     * @return array
+     */
+    public function getSiteAccesses()
+    {
+        $siteAccesses = array_intersect(
+            $this->configResolver->getParameter('translation_siteaccesses'),
+            $this->configResolver->getParameter('related_siteaccesses')
+        );
+
+        return $siteAccesses;
+    }
+
+    /**
+     * Returns the list of all available languages, including the ones configured in related SiteAccesses.
+     *
+     * @return array
+     */
+    public function getTranslationSiteAccesses()
+    {
+        return $this->configResolver->getParameter('translation_siteaccesses') ?:
+            $this->configResolver->getParameter('related_siteaccesses');
     }
 
     /**
@@ -151,10 +189,7 @@ class LanguageResolver
      */
     public function getLanguages()
     {
-        $translationSiteAccesses = array_intersect(
-            $this->configResolver->getParameter('translation_siteaccesses'),
-            $this->configResolver->getParameter('related_siteaccesses')
-        );
+        $translationSiteAccesses = $this->getTranslationSiteAccesses();
 
         $availableLanguages = [];
 

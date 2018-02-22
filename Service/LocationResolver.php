@@ -8,7 +8,7 @@ namespace Origammi\Bundle\EzAppBundle\Service;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\Core\MVC\Symfony\Templating\GlobalHelper;
-use Origammi\Bundle\EzAppBundle\Repository\LocationService;
+use Origammi\Bundle\EzAppBundle\Repository\LocationApiService;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -21,7 +21,7 @@ use Symfony\Component\HttpFoundation\Request;
 class LocationResolver
 {
     /**
-     * @var LocationService
+     * @var LocationApiService
      */
     private $locationService;
 
@@ -36,13 +36,13 @@ class LocationResolver
     private $currentLocation;
 
     /**
-     * @param LocationService $locationService
-     * @param GlobalHelper    $globalHelper
+     * @param LocationApiService $locationService
+     * @param GlobalHelper       $globalHelper
      *
      * @internal param RequestStack $requestStack
      * @internal param ConfigResolver $configResolver
      */
-    public function __construct(LocationService $locationService, GlobalHelper $globalHelper)
+    public function __construct(LocationApiService $locationService, GlobalHelper $globalHelper)
     {
         $this->locationService = $locationService;
         $this->globalHelper    = $globalHelper;
