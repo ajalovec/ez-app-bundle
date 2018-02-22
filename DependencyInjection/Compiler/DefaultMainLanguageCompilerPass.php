@@ -20,7 +20,7 @@ class DefaultMainLanguageCompilerPass implements CompilerPassInterface
         $defaultSiteaccess = $container->getParameterBag()->get('ezpublish.siteaccess.default');
         $languages         = $container->getParameterBag()->get('ezsettings.' . $defaultSiteaccess . '.languages');
 
-        $container->setParameter('origammi_ezapp.main_language_code', array_shift($languages));
+        $container->setParameter('origammi.ez_app.main_language_code', array_shift($languages));
     }
 
 }
