@@ -94,7 +94,7 @@ class QueryFactory
      */
     public function createQueryParameters()
     {
-        $filters   = $this->filters;
+        $filters = $this->filters;
 
         if (is_bool($this->visible)) {
             $filters[] = new Criterion\Visibility($this->visible ? Criterion\Visibility::VISIBLE : Criterion\Visibility::HIDDEN);
@@ -111,13 +111,14 @@ class QueryFactory
     }
 
     /**
-     * @param Criterion[] $filters
+     * @param null|Criterion[] $filters
      *
      * @return $this
      */
-    public function setFilters(array $filters)
+    public function setFilters(array $filters = null)
     {
-        $this->filters = $filters;
+        $this->filters = [];
+        $this->addFilters($filters);
 
         return $this;
     }
@@ -135,13 +136,17 @@ class QueryFactory
     }
 
     /**
-     * @param Criterion[] $filters
+     * @param null|Criterion[] $filters
      *
      * @return $this
      */
-    public function addFilters(array $filters)
+    public function addFilters(array $filters = null)
     {
-        $this->filters = array_merge($this->filters, $filters);
+        if (!empty($filters)) {
+            foreach ($filters as $filter) {
+                $this->addFilter($filter);
+            }
+        }
 
         return $this;
     }
@@ -153,7 +158,8 @@ class QueryFactory
      */
     public function setAllowedContentTypes(array $allowedContentTypes = null)
     {
-        $this->allowedContentTypes = (array)$allowedContentTypes;
+        $this->allowedContentTypes = [];
+        $this->addAllowedContentTypes($allowedContentTypes);
 
         return $this;
     }
@@ -165,7 +171,7 @@ class QueryFactory
      */
     public function addAllowedContentType($allowedContentType)
     {
-        $this->allowedContentTypes[] = $allowedContentType;
+        $this->allowedContentTypes[] = (string)$allowedContentType;
 
         return $this;
     }
@@ -175,23 +181,26 @@ class QueryFactory
      *
      * @return $this
      */
-    public function addAllowedContentTypes(array $allowedContentTypes)
+    public function addAllowedContentTypes(array $allowedContentTypes = null)
     {
         if (!empty($allowedContentTypes)) {
-            $this->allowedContentTypes = array_merge($this->allowedContentTypes, $allowedContentTypes);
+            foreach ($allowedContentTypes as $allowedContentType) {
+                $this->addAllowedContentType($allowedContentType);
+            }
         }
 
         return $this;
     }
 
     /**
-     * @param SortClause[] $sortClauses
+     * @param null|SortClause[] $sortClauses
      *
      * @return $this
      */
     public function setSort(array $sortClauses = null)
     {
-        $this->parameters['sortClauses'] = (array)$sortClauses;
+        $this->parameters['sortClauses'] = [];
+        $this->addSorts($sortClauses);
 
         return $this;
     }
@@ -216,7 +225,9 @@ class QueryFactory
     public function addSorts(array $sortClauses = null)
     {
         if (!empty($sortClauses)) {
-            $this->parameters['sortClauses'] = array_merge($this->parameters['sortClauses'], $sortClauses);
+            foreach ($sortClauses as $sortClause) {
+                $this->addSort($sortClause);
+            }
         }
 
         return $this;
