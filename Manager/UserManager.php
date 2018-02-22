@@ -75,6 +75,10 @@ class UserManager extends AbstractManager
      * @param User  $user
      * @param array $data
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\ContentFieldValidationException
+     * @throws \eZ\Publish\API\Repository\Exceptions\ContentValidationException
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return User
      */
     public function update(User $user, array $data)
@@ -99,6 +103,7 @@ class UserManager extends AbstractManager
     /**
      * @param User $user
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return User
      */
     public function delete(User $user)
@@ -109,11 +114,17 @@ class UserManager extends AbstractManager
     }
 
     /**
+     * Assignes user to groups and removes all groups that are not passed via $groups argument
+     *
      * @param User  $user
      * @param array $groups
      *
-     * @return array
      * @throws InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\BadStateException
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     * @return array
      */
     public function setUserGroups(User $user, array $groups)
     {
@@ -153,9 +164,13 @@ class UserManager extends AbstractManager
     }
 
     /**
+     * Adds user to additional groups
+     *
      * @param User  $user
      * @param array $groups
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return array
      */
     public function addUserGroups(User $user, array $groups)
@@ -184,6 +199,10 @@ class UserManager extends AbstractManager
      * @param User  $user
      * @param array $groups
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\BadStateException
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return array
      */
     public function removeUserGroups(User $user, array $groups)

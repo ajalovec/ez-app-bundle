@@ -18,7 +18,11 @@ use eZ\Publish\Core\Repository\Values\User\UserReference;
 abstract class AbstractManager
 {
     const DEFAULT_LANGUAGE_CODE = 'eng-GB';
-    const ADMIN_USER_ID         = 14;
+
+    /**
+     * @var null|int
+     */
+    private $adminUserId;
 
     /**
      * @var string
@@ -39,10 +43,13 @@ abstract class AbstractManager
     /**
      * AbstractManager constructor.
      *
-     * @param $mainLanguage
+     * @param int    $adminUserId
+     * @param string $mainLanguage
      */
-    public function __construct($mainLanguage)
+    public function __construct($adminUserId, $mainLanguage = self::DEFAULT_LANGUAGE_CODE)
     {
+        // TODO: do not implicitly set user id when service is created but make it modifiable
+        $this->adminUserId  = (int)$adminUserId;
         $this->mainLanguage = $mainLanguage;
     }
 
@@ -59,7 +66,6 @@ abstract class AbstractManager
      */
     public function getRepository()
     {
-        $this->setUser(self::ADMIN_USER_ID);
         return $this->repository;
     }
 
@@ -68,15 +74,15 @@ abstract class AbstractManager
      */
     public function getMainLanguage()
     {
-        return $this->mainLanguage ?: self::DEFAULT_LANGUAGE_CODE;
+        return $this->mainLanguage;
     }
 
-    /**
-     * @param $userId
-     *
-     * @return bool
-     */
-    protected function setUser($userId)
+    public function loginAdminUser()
+    {
+        $this->loginUser($this->adminUserId);
+    }
+
+    public function loginUser($userId)
     {
         $permissionResolver = $this->repository->getPermissionResolver();
 
@@ -98,6 +104,7 @@ abstract class AbstractManager
 
     protected function test()
     {
+        // TODO: test implementation of sudo execution which doesnt restrict actions based on the current repository user
         $result = $this->repository->sudo(function (\eZ\Publish\API\Repository\Repository $repository) {
             $searchService = $repository->getSearchService();
 
