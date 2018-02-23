@@ -88,7 +88,7 @@ class ApiService implements SearchServiceInterface, LocationServiceInterface, Co
     public function findLocations($queryType, array $parameters = [], $fetchArray = false)
     {
         $query = $this->createQuery($queryType, $parameters);
-        $data  = $this->locationService->query($query, $fetchArray);
+        $data  = $this->locationService->search($query, $fetchArray);
 
         return $data;
     }
