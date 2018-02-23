@@ -40,7 +40,7 @@ class RepositoryUtil
      */
     public static function searchResultToArray($searchResult)
     {
-        if (!$searchResult instanceof SearchResult || !$searchResult instanceof LocationList) {
+        if (!$searchResult instanceof SearchResult && !$searchResult instanceof LocationList) {
             throw new InvalidArgumentType('searchResult', sprintf('%s or %s', SearchResult::class, LocationList::class), $searchResult);
         }
 
