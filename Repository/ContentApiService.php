@@ -124,18 +124,23 @@ class ContentApiService
     /**
      * @param Location   $location
      * @param array|null $allowed_content_types List of contentTypeIdentifiers to whitelist
+     * @param int|null   $limit
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @return Content[]
      */
-    public function findByParent(Location $location, array $allowed_content_types = null)
+    public function findByParent(Location $location, array $allowed_content_types = null, $limit = null)
     {
         $queryFactory = QueryFactory::create()
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\ParentLocationId($location->id))
             ->setAllowedContentTypes($allowed_content_types)
-        ;;
+        ;
+
+        if (is_int($limit)) {
+            $queryFactory->setLimit($limit);
+        }
 
         $searchResult = $this->searchService->findLocations($queryFactory->createLocationQuery());
 
@@ -145,19 +150,24 @@ class ContentApiService
     /**
      * @param Location   $location
      * @param array|null $allowed_content_types List of contentTypeIdentifiers to whitelist
+     * @param int|null   $limit
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @return Content[]
      */
-    public function findBySubtree(Location $location, array $allowed_content_types = null)
+    public function findBySubtree(Location $location, array $allowed_content_types = null, $limit = null)
     {
         $queryFactory = QueryFactory::create()
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\Subtree($location->pathString))
             ->addFilter(new Criterion\Location\Depth(Criterion\Operator::GT, $location->depth))
             ->setAllowedContentTypes($allowed_content_types)
-        ;;
+        ;
+
+        if (is_int($limit)) {
+            $queryFactory->setLimit($limit);
+        }
 
         $searchResult = $this->searchService->findLocations($queryFactory->createLocationQuery());
 

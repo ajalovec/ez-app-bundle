@@ -42,7 +42,7 @@ class LocationApiService
      * LocationService constructor.
      *
      * @param LocationService $locationService
-     * @param SearchService       $searchService
+     * @param SearchService   $searchService
      */
     public function __construct(LocationService $locationService, SearchService $searchService)
     {
@@ -89,10 +89,10 @@ class LocationApiService
         }
 
         if ($primaryId = RepositoryUtil::resolveLocationId($id)) {
-            return $this->loadById($primaryId);
+            return $this->locationService->loadLocation((int)$primaryId);
         }
 
-        return $this->loadByRemoteId((string)$id);
+        return $this->locationService->loadLocationByRemoteId((string)$id);
     }
 
     /**
@@ -151,33 +151,39 @@ class LocationApiService
     /**
      * @param Location   $location
      * @param array|null $allowed_content_types
+     * @param int|null   $limit
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Location[]
      */
-    public function findByParent(Location $location, array $allowed_content_types = null)
+    public function findByParent(Location $location, array $allowed_content_types = null, $limit = null)
     {
         $queryFactory = QueryFactory::create()
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\ParentLocationId($location->id))
             ->setAllowedContentTypes($allowed_content_types)
-        ;;
+        ;
 
-        return $this->query($queryFactory->createLocationQuery(), true);
+        if (is_int($limit)) {
+            $queryFactory->setLimit($limit);
+        }
+
+        return $this->search($queryFactory->createLocationQuery(), true);
     }
 
     /**
      * @param Location   $location
      * @param array|null $allowed_content_types
+     * @param int|null   $limit
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Location[]
      */
-    public function findBySubtree(Location $location, array $allowed_content_types = null)
+    public function findBySubtree(Location $location, array $allowed_content_types = null, $limit = null)
     {
         $queryFactory = QueryFactory::create()
 //            ->addSort(new Query\SortClause\Location\Path(Query::SORT_ASC))
@@ -186,9 +192,13 @@ class LocationApiService
             ->addFilter(new Criterion\Subtree($location->pathString))
             ->addFilter(new Criterion\Location\Depth(Criterion\Operator::GT, $location->depth))
             ->setAllowedContentTypes($allowed_content_types)
-        ;;
+        ;
 
-        return $this->query($queryFactory->createLocationQuery(), true);
+        if (is_int($limit)) {
+            $queryFactory->setLimit($limit);
+        }
+
+        return $this->search($queryFactory->createLocationQuery(), true);
     }
 
 
@@ -212,7 +222,7 @@ class LocationApiService
             ->setAllowedContentTypes($allowed_content_type)
         ;;
 
-        return $this->query($queryFactory->createLocationQuery(), true);
+        return $this->search($queryFactory->createLocationQuery(), true);
     }
 
     /**
@@ -223,7 +233,7 @@ class LocationApiService
      * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Location[]|SearchResult
      */
-    public function query(LocationQuery $query, $fetchArray = false)
+    public function search(LocationQuery $query, $fetchArray = false)
     {
         $searchResult = $this->searchService->findLocations($query);
 
