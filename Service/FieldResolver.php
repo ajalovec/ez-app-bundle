@@ -183,10 +183,10 @@ class FieldResolver
      * Resolve image value from content for given fields
      *
      * @param Content      $content
-     * @param string|array $fieldNames Can be comma separated string ("prop1,prop2") or array (["prop1", "prop2"])
+     * @param string|array $fieldNames Finds first populatd field. Can be comma separated string ("prop1,prop2") or array (["prop1", "prop2"])
      * @param string       $variationName
      *
-     * @return array|null
+     * @return array|null ['uri' => 'url/to/image', 'value' => ['image fields']]
      */
     public function resolveImageField(Content $content, $fieldNames, $variationName = 'original')
     {
@@ -207,6 +207,8 @@ class FieldResolver
                 return ['value' => $field->value, 'uri' => $image->uri];
             }
         }
+
+        return null;
     }
 
     private function getImageVariation(ContentField $field, VersionInfo $versionInfo, $variationName)
