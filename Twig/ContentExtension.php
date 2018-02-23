@@ -4,7 +4,7 @@ namespace Origammi\Bundle\EzAppBundle\Twig;
 
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Location;
-use Origammi\Bundle\EzAppBundle\Repository\ApiService;
+use Origammi\Bundle\EzAppBundle\Repository\ContentApiService;
 use Origammi\Bundle\EzAppBundle\Service\ContentTypeResolver;
 use Origammi\Bundle\EzAppBundle\Service\FieldResolver;
 use Twig_Extension;
@@ -19,14 +19,9 @@ use Twig_Extension;
 class ContentExtension extends Twig_Extension
 {
     /**
-     * @var FieldResolver
+     * @var ContentApiService
      */
-    private $fieldResolver;
-
-    /**
-     * @var ApiService
-     */
-    private $repositoryApi;
+    private $contentApi;
 
     /**
      * @var ContentTypeResolver
@@ -34,18 +29,24 @@ class ContentExtension extends Twig_Extension
     private $contentTypeResolver;
 
     /**
+     * @var FieldResolver
+     */
+    private $fieldResolver;
+
+
+    /**
+     * @param ContentApiService   $contentApi
      * @param ContentTypeResolver $contentTypeResolver
-     * @param ApiService          $repositoryApi
      * @param FieldResolver       $fieldResolver
      */
     public function __construct(
+        ContentApiService $contentApi,
         ContentTypeResolver $contentTypeResolver,
-        ApiService $repositoryApi,
         FieldResolver $fieldResolver
     ) {
-        $this->fieldResolver       = $fieldResolver;
-        $this->repositoryApi       = $repositoryApi;
+        $this->contentApi          = $contentApi;
         $this->contentTypeResolver = $contentTypeResolver;
+        $this->fieldResolver       = $fieldResolver;
     }
 
     /**
@@ -55,7 +56,7 @@ class ContentExtension extends Twig_Extension
      */
     public function getName()
     {
-        return 'origammi_ezapp_twig_content_extension';
+        return 'origammi_ez_app_content';
     }
 
     /**
@@ -64,65 +65,67 @@ class ContentExtension extends Twig_Extension
     public function getFunctions()
     {
         return [
-            'app_load_content'      => new \Twig_Function_Method($this, 'loadContent'),
-            'app_load_location'     => new \Twig_Function_Method($this, 'loadLocation'),
-            'app_load_content_id'   => new \Twig_Function_Method($this, 'loadContentId'),
-            'app_load_location_id'  => new \Twig_Function_Method($this, 'loadLocationId'),
-            'app_is_content_type'   => new \Twig_Function_Method($this, 'isContentType'),
-            'app_field_name'        => new \Twig_Function_Method($this, 'getFieldName'),
-            'app_has_value'         => new \Twig_Function_Method($this, 'hasValue'),
-            'app_field_value'       => new \Twig_Function_Method($this, 'getFieldValue', ['is_safe' => ['html']]),
-            'app_image_value'       => new \Twig_Function_Method($this, 'getImageValue'),
-            'app_content_type'      => new \Twig_Function_Method($this, 'getContentType'),
-            'app_content_type_name' => new \Twig_Function_Method($this, 'getContentTypeName'),
+            new \Twig_SimpleFunction('app_load_content', [ $this, 'loadContent' ]),
+            new \Twig_SimpleFunction('app_load_content_children', [ $this, 'loadContentChildren' ]),
+            new \Twig_SimpleFunction('app_load_content_id', [ $this, 'loadContentId' ]),
+            new \Twig_SimpleFunction('app_is_content_type', [ $this, 'isContentType' ]),
+            new \Twig_SimpleFunction('app_field_name', [ $this, 'getFieldName' ]),
+            new \Twig_SimpleFunction('app_has_value', [ $this, 'hasValue' ]),
+            new \Twig_SimpleFunction('app_field_value', [ $this, 'getFieldValue' ], [ 'is_safe' => [ 'html' ] ]),
+            new \Twig_SimpleFunction('app_image_value', [ $this, 'getImageValue' ]),
+            new \Twig_SimpleFunction('app_content_type', [ $this, 'getContentType' ]),
+            new \Twig_SimpleFunction('app_content_type_name', [ $this, 'getContentTypeName' ]),
         ];
     }
 
     /**
      * @param $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Content|Content[]
      */
     public function loadContent($id)
     {
-        return $this->repositoryApi->loadContent($id);
+        return $this->contentApi->load($id);
     }
 
+
     /**
-     * @param $id
+     * @param Location          $location
+     * @param string|array|null $contentTypes
+     * @param int|null          $limit
      *
-     * @return Location|Location[]
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
+     * @return Content[]
      */
-    public function loadLocation($id)
+    public function loadContentChildren(Location $location, $contentTypes = null, $limit = null)
     {
-        return $this->repositoryApi->loadLocation($id);
+        if (is_string($contentTypes)) {
+            $contentTypes = [$contentTypes];
+        }
+        return $this->contentApi->findByParent($location, $contentTypes, $limit);
     }
 
 
     /**
      * @param $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Content|Content[]
      */
     public function loadContentId($id)
     {
-        return $this->repositoryApi->loadContent($id)->id;
-    }
-
-    /**
-     * @param $id
-     *
-     * @return Location|Location[]
-     */
-    public function loadLocationId($id)
-    {
-        return $this->repositoryApi->loadLocation($id)->id;
+        return $this->loadContent($id)->id;
     }
 
     /**
      * @param Content|Location|null $content
      * @param string|array          $contentTypeIdentifier
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return bool
      */
     public function isContentType($content = null, $contentTypeIdentifier)
@@ -140,6 +143,7 @@ class ContentExtension extends Twig_Extension
     /**
      * @param int|string|Location|Content $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return \eZ\Publish\API\Repository\Values\ContentType\ContentType
      */
     public function getContentType($id)
@@ -150,6 +154,7 @@ class ContentExtension extends Twig_Extension
     /**
      * @param int|string|Location|Content $id
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return string
      */
     public function getContentTypeName($id)

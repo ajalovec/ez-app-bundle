@@ -82,11 +82,9 @@ services:
           - "@ezpublish.templating.global_helper"
 
 
-
   ##
   # Twig helpers
   #
-
   origammi.ez_app.twig.extension.core:
       class: Origammi\Bundle\EzAppBundle\Twig\Extension\CoreExtension
       arguments: ["@origammi.ez_app.repository.content_api"]
@@ -96,22 +94,18 @@ services:
   origammi.ez_app.twig.content_extension:
       class: Origammi\Bundle\EzAppBundle\Twig\ContentExtension
       arguments:
+        - '@origammi.ez_app.repository.content_api'
         - '@origammi.ez_app.service.content_type_resolver'
-        - '@origammi.ez_app.repository.api'
         - '@origammi.ez_app.service.field_resolver'
       tags:
           - { name: twig.extension }
 
-#  origammi.ez_app.service.global_helper:
-#          class: Origammi\Bundle\EzAppBundle\Service\GlobalHelper
-#          arguments:
-#            - "@ezpublish.config.resolver"
-#            - "@ezpublish.api.service.location"
-#            - "@router"
-#            - "@ezpublish.translation_helper"
-#
-#          calls:
-#              - [setRequestStack, ["@request_stack"]]
+  origammi.ez_app.twig.location_extension:
+      class: Origammi\Bundle\EzAppBundle\Twig\LocationExtension
+      arguments:
+        - '@origammi.ez_app.repository.location_api'
+      tags:
+          - { name: twig.extension }
 
   ##
   # Controllers
