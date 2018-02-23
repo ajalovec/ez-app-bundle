@@ -34,7 +34,7 @@ class CreateUserCommand extends BaseCommand
             ->addArgument('username', InputArgument::REQUIRED, 'The username')
             ->addArgument('email', InputArgument::REQUIRED, 'The email')
             ->addArgument('password', InputArgument::REQUIRED, 'The password')
-            ->addArgument('groups', InputArgument::IS_ARRAY | InputArgument::REQUIRED, 'One or more user group ids (separated with `,) <comment>[example: 22,44,24,63]</comment>')
+            ->addArgument('groups', InputArgument::IS_ARRAY | InputArgument::REQUIRED, 'One or more user group ids (separated with `,) <comment>[example: 22 44 24 63]</comment>')
             ->addOption('disabled', null, InputOption::VALUE_NONE, 'Disable the user by default')
             ->addOption('admin', null, InputOption::VALUE_NONE, 'Set the user as admin')
             ->setHelp(<<<'EOT'
@@ -54,7 +54,7 @@ You have to specify one or more user groups or use --admin option to assign user
 
   <info>%command.full_name% acme acme@email.com 1234 3</info>
   
-  <info>%command.full_name% acme acme@email.com 1234 5,33,44,55,66</info>
+  <info>%command.full_name% acme acme@email.com 1234 5 33 44 55 66</info>
   
   <info>%command.full_name% acme acme@email.com 1234 --admin</info>
 
@@ -73,6 +73,7 @@ EOT
      * @param InputInterface  $input
      * @param OutputInterface $output
      *
+     * @throws \Exception
      * @return int|null|void
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -85,12 +86,9 @@ EOT
         $user['password']   = $input->getArgument('password');
         $user['first_name'] = $user['last_name'] = $user['username'];
 
-        return;
         $this->getUserManager()->create($user, $userGroups);
 
         $output->writeln(sprintf('Created user <comment>%s</comment>', $user['username']));
-
-        return;
     }
 
     /**
@@ -128,5 +126,21 @@ EOT
 
             $input->setArgument($name, $answer);
         }
+    }
+
+    /**
+     * @param string $errorMessage
+     *
+     * @return \Closure
+     */
+    private function getIsEmptyValidator($errorMessage = 'Value can not be empty')
+    {
+        return function ($value) use ($errorMessage) {
+            if (empty($value)) {
+                throw new \Exception($errorMessage);
+            }
+
+            return $value;
+        };
     }
 }
