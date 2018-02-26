@@ -152,13 +152,14 @@ class LocationApiService
      * @param Location   $location
      * @param array|null $allowed_content_types
      * @param int|null   $limit
+     * @param int|null   $offset
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Location[]
      */
-    public function findByParent(Location $location, array $allowed_content_types = null, $limit = null)
+    public function findByParent(Location $location, array $allowed_content_types = null, $limit = null, $offset = null)
     {
         $queryFactory = QueryFactory::create()
             ->setSort($location->getSortClauses())
@@ -170,6 +171,10 @@ class LocationApiService
             $queryFactory->setLimit($limit);
         }
 
+        if (is_int($offset)) {
+            $queryFactory->setOffset($offset);
+        }
+
         return $this->search($queryFactory->createLocationQuery(), true);
     }
 
@@ -177,13 +182,14 @@ class LocationApiService
      * @param Location   $location
      * @param array|null $allowed_content_types
      * @param int|null   $limit
+     * @param int|null   $offset
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @throws \eZ\Publish\Core\Base\Exceptions\InvalidArgumentType
      * @return Location[]
      */
-    public function findBySubtree(Location $location, array $allowed_content_types = null, $limit = null)
+    public function findBySubtree(Location $location, array $allowed_content_types = null, $limit = null, $offset = null)
     {
         $queryFactory = QueryFactory::create()
 //            ->addSort(new Query\SortClause\Location\Path(Query::SORT_ASC))
@@ -196,6 +202,10 @@ class LocationApiService
 
         if (is_int($limit)) {
             $queryFactory->setLimit($limit);
+        }
+
+        if (is_int($offset)) {
+            $queryFactory->setOffset($offset);
         }
 
         return $this->search($queryFactory->createLocationQuery(), true);
