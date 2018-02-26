@@ -94,41 +94,49 @@ class FieldResolver
      * Resolve text value from content for given fields
      *
      * @param Content      $content
-     * @param string|array $fieldName Can be comma separated string ("prop1,prop2") or array (["prop1", "prop2"])
+     * @param string|array $fieldNames Can be comma separated string ("prop1,prop2") or array (["prop1", "prop2"])
      *
      * @return null|string|mixed
      */
-    public function resolveFieldValue(Content $content, $fieldName, array $params = [])
+    public function resolveFieldValue(Content $content, $fieldNames, array $params = [])
     {
-        if (array_key_exists($fieldName, $content->fields) && false === $this->fieldHelper->isFieldEmpty($content, $fieldName)) {
-            $field = $this->translationHelper->getTranslatedField($content, $fieldName);
+        if (is_scalar($fieldNames)) {
+            $fieldNames = explode(',', $fieldNames);
+        }
 
-            # TODO: improve validation
-            switch (get_class($field->value)) {
-                case FieldType\RichText\Value::class:
-                    return $this->richTextConverter->convert($field->value->xml)->saveHTML();
-                case FieldType\TextLine\Value::class:
-                case FieldType\TextBlock\Value::class:
-                    return $field->value->text;
-                case FieldType\EmailAddress\Value::class:
-                    return $field->value->email;
-                case FieldType\Float\Value::class:
-                case FieldType\Integer\Value::class:
-                    return $field->value->value;
-                case FieldType\Checkbox\Value::class:
-                    return $field->value->bool;
-                case FieldType\Selection\Value::class:
-                    return $field->value->selection;
-                case FieldType\Image\Value::class:
-                    $image = $this->getImageVariation(
-                        $field,
-                        $content->getVersionInfo(),
-                        isset($params['variationName']) ? $params['variationName'] : 'original'
-                    );
+        if (is_array($fieldNames) && count($fieldNames)) {
+            foreach ($fieldNames as $fieldName) {
+                if (array_key_exists($fieldName, $content->fields) && false === $this->fieldHelper->isFieldEmpty($content, $fieldName)) {
+                    $field = $this->translationHelper->getTranslatedField($content, $fieldName);
 
-                    return ['value' => $field->value, 'uri' => $image->uri];
-                default:
-                    return $field->value;
+                    # TODO: improve validation
+                    switch (get_class($field->value)) {
+                        case FieldType\RichText\Value::class:
+                            return $this->richTextConverter->convert($field->value->xml)->saveHTML();
+                        case FieldType\TextLine\Value::class:
+                        case FieldType\TextBlock\Value::class:
+                            return $field->value->text;
+                        case FieldType\EmailAddress\Value::class:
+                            return $field->value->email;
+                        case FieldType\Float\Value::class:
+                        case FieldType\Integer\Value::class:
+                            return $field->value->value;
+                        case FieldType\Checkbox\Value::class:
+                            return $field->value->bool;
+                        case FieldType\Selection\Value::class:
+                            return $field->value->selection;
+                        case FieldType\Image\Value::class:
+                            $image = $this->getImageVariation(
+                                $field,
+                                $content->getVersionInfo(),
+                                isset($params['variationName']) ? $params['variationName'] : 'original'
+                            );
+
+                            return ['value' => $field->value, 'uri' => $image->uri];
+                        default:
+                            return $field->value;
+                    }
+                }
             }
         }
 
