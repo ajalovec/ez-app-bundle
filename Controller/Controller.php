@@ -79,4 +79,12 @@ abstract class Controller extends BaseController
         return $this->container->get('origammi.ez_app.service.language_resolver');
     }
 
+    /**
+     * @return \Netgen\TagsBundle\Core\SignalSlot\TagsService|object
+     */
+    protected function getTagsService()
+    {
+        return $this->get('eztags.api.service.tags');
+    }
+
 }
