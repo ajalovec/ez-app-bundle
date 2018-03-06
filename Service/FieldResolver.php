@@ -91,7 +91,7 @@ class FieldResolver
     }
 
     /**
-     * Resolve text value from content for given fields
+     * Resolve text value from content for given fields, if none of the fields exists or are empty it returns null
      *
      * @param Content      $content
      * @param string|array $fieldNames Can be comma separated string ("prop1,prop2") or array (["prop1", "prop2"])
