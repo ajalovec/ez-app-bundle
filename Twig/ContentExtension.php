@@ -66,6 +66,7 @@ class ContentExtension extends Twig_Extension
     {
         return [
             new \Twig_SimpleFunction('app_load_content', [ $this, 'loadContent' ]),
+            new \Twig_SimpleFunction('app_load_content_list', [ $this, 'loadContentList' ]),
             new \Twig_SimpleFunction('app_load_content_children', [ $this, 'loadContentChildren' ]),
             new \Twig_SimpleFunction('app_load_content_id', [ $this, 'loadContentId' ]),
             new \Twig_SimpleFunction('app_is_content_type', [ $this, 'isContentType' ]),
@@ -88,6 +89,18 @@ class ContentExtension extends Twig_Extension
     public function loadContent($id)
     {
         return $this->contentApi->load($id);
+    }
+
+
+    /**
+     * @param array $ids
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @return Content|Content[]
+     */
+    public function loadContentList($ids)
+    {
+        return $this->contentApi->findByIds($ids);
     }
 
 
