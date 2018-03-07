@@ -1,28 +1,38 @@
 <?php
-/**
- * Copyright (c) 2017.
- */
 
 namespace Origammi\Bundle\EzAppBundle\Command;
 
+use Kaliop\eZMigrationBundle\API\Collection\MigrationCollection;
+use Kaliop\eZMigrationBundle\API\Value\Migration;
 use Kaliop\eZMigrationBundle\API\Value\MigrationDefinition;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
+
 
 /**
  * Class InstallCommand
  *
  * @package   Origammi\Bundle\EzAppBundle\Command
  * @author    Andraž Jalovec <andraz.jalovec@origammi.co>
- * @copyright 2017 Origammi (http://origammi.co)
+ * @copyright 2018 Origammi (http://origammi.co)
  */
 class InstallCommand extends ContainerAwareCommand
 {
-    private $defaultPath;
+    /**
+     * @var SymfonyStyle
+     */
+    protected $io;
+
+    /**
+     * @var MigrationCollection
+     */
+    private $migrationsCollection;
+
 
     /**
      * {@inheritdoc}
@@ -32,48 +42,98 @@ class InstallCommand extends ContainerAwareCommand
         $this
             ->setName('origammi:ezapp:install')
             ->setDescription('Install project content schema.')
-            ->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'The directory to load the seed data from.', 'src/AppBundle/Installer/seed')
-            ->addOption('limit', 'l', InputOption::VALUE_OPTIONAL, 'Specify the number for migration limit.')
+            ->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'The directory to load the seed data from.', 'src/AppBundle/Installer')
             ->addOption('force', null, InputOption::VALUE_NONE, 'Use this flag to force installation.')
             ->addOption('lang', null, InputOption::VALUE_OPTIONAL, 'Set default language code.', 'eng-GB')
+            ->addOption('demo', null, InputOption::VALUE_NONE, 'Load demo data?')
         ;
     }
+
 
     /**
      * {@inheritdoc}
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->defaultPath = $input->getOption('path');
-        $migrationService = $this->getContainer()->get('ez_migration_bundle.migration_service');
-        $files            = $this->findFiles();
+        $this->io         = new SymfonyStyle($input, $output);
+        $migrationService = $this->getMigrationsService();
 
-        $definitions = [];
-        $data        = [];
-        $i           = 0;
-        $limit       = (int)$input->getOption('limit');
+        $seedPath = $input->getOption('path') . '/seed';
+        if (!file_exists($seedPath) || !is_dir($seedPath)) {
+            throw new \LogicException(sprintf('Directory `%s` for migrations does not exist or is not directory!', $seedPath));
+        }
+
+        $definitions = $this->getMigrationDefinitions($seedPath);
+
+        $demoPath = $input->getOption('path') . '/demo';
+        if ($input->getOption('demo')) {
+            if (!file_exists($demoPath) || !is_dir($demoPath)) {
+                throw new \LogicException(sprintf('Directory `%s` does not exist or is not directory! Either remove option --demo or create directory.', $demoPath));
+            }
+            $definitions = array_merge($definitions, $this->getMigrationDefinitions($demoPath));
+        }
+
+        if ($input->getOption('force')) {
+            foreach ($definitions as $filename => $definition) {
+                $migrationService->executeMigration($definition, true, $input->getOption('lang'));
+            }
+        }
+    }
+
+
+    /**
+     * Get migration definitions from php and yml files under a directory
+     *
+     * @param string $path
+     *
+     * @throws \Exception
+     * @return MigrationDefinition[]
+     */
+    protected function getMigrationDefinitions($path)
+    {
+        $path             = realpath($path);
+        $migrationService = $this->getMigrationsService();
+        $definitions      = [];
+        $data             = [];
+        $i                = 0;
 
         /** @var SplFileInfo $file */
-        foreach ($files as $file) {
+        foreach ($this->findFiles($path) as $file) {
             if ($file->isFile()) {
-                $name = $file->getFilename();
-
-                if ($limit && intval($name) > $limit) {
-                    break;
-                }
-
+                $name                = $file->getFilename();
                 $migrationDefinition = new MigrationDefinition(
                     $name,
                     $file->getRealPath(),
-                    file_get_contents($file->getRealPath())
+                    $file->getContents()
                 );
                 $migrationDefinition = $migrationService->parseMigrationDefinition($migrationDefinition);
-                $definitions[$name]  = $migrationDefinition;
 
                 if ($migrationDefinition->status != MigrationDefinition::STATUS_PARSED) {
                     $notes = '<error>' . $migrationDefinition->parsingError . '</error>';
                 } else {
-                    $notes = 'Ok';
+                    $migration = $this->getMigration($migrationDefinition->name);
+                    if (is_null($migration) || $migration->status === Migration::STATUS_TODO) {
+                        $definitions[$name] = $migrationDefinition;
+                        $notes              = 'Ok';
+                    } else {
+                        switch ($migration->status) {
+                            case Migration::STATUS_FAILED:
+                                $notes              = '<error>Failed</error>';
+                                $definitions[$name] = $migrationDefinition;
+                                break;
+                            case Migration::STATUS_PARTIALLY_DONE:
+                                $notes = '<error>Partially done</error>';
+                                break;
+                            case Migration::STATUS_SKIPPED:
+                                $notes = '<comment>Skipped</comment>';
+                                break;
+                            case Migration::STATUS_STARTED:
+                                $notes = '<error>Started</error>';
+                                break;
+                            default:
+                                $notes = 'Executed';
+                        }
+                    }
                 }
 
                 $data[] = array(
@@ -84,26 +144,52 @@ class InstallCommand extends ContainerAwareCommand
             }
         }
 
-        $table = $this->getHelperSet()->get('table');
-        $table
-            ->setHeaders(array('#', 'Files', 'Notes'))
-            ->setRows($data)
-        ;
+        $this->io->title($path);
+        $this->io->table([ '#', 'Files', 'Notes' ], $data);
 
-        $table->render($output);
-
-        if ($input->getOption('force')) {
-            foreach ($definitions as $definition) {
-                $migrationService->executeMigration($definition, true, $input->getOption('lang'));
-            }
-        }
+        return $definitions;
     }
 
-    private function findFiles()
+
+    /**
+     * The kaliop migrations service
+     * @return \Kaliop\eZMigrationBundle\Core\MigrationService
+     */
+    protected function getMigrationsService()
+    {
+        return $this->getContainer()->get('ez_migration_bundle.migration_service');
+    }
+
+
+    /**
+     * Get a migration from the db
+     *
+     * @param string $name
+     *
+     * @return Migration
+     */
+    protected function getMigration($name)
+    {
+        if (is_null($this->migrationsCollection)) {
+            $this->migrationsCollection = $this->getMigrationsService()->getMigrations();
+        }
+
+        return isset($this->migrationsCollection[$name]) ? $this->migrationsCollection[$name] : null;
+    }
+
+
+    /**
+     * Find files in path
+     *
+     * @param string $path
+     *
+     * @return Finder
+     */
+    private function findFiles($path)
     {
         $files = Finder::create()
-            ->in($this->defaultPath)
-            ->name('/^[0-9]{3}_[\w_\-\d]+\.(yml|php)/')
+            ->in($path)
+            ->name('/^[0-9]{3}_[A-z_0-9\-]+\.(yml|php)/')
             ->files()
             ->sort(function (\SplFileInfo $f1, \SplFileInfo $f2) {
                 return strcmp($f1->getFilename(), $f2->getFilename());
