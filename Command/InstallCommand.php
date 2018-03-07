@@ -24,6 +24,11 @@ use Symfony\Component\Finder\SplFileInfo;
 class InstallCommand extends ContainerAwareCommand
 {
     /**
+     * This name has to be underscored because when we are searching for file pattern in parent folder and the filename has same name this file will be sorted first.
+     */
+    const SEED_DIR_NAME = '_seed';
+
+    /**
      * @var SymfonyStyle
      */
     protected $io;
@@ -41,11 +46,11 @@ class InstallCommand extends ContainerAwareCommand
     {
         $this
             ->setName('origammi:ezapp:install')
-            ->setDescription('Install project content schema.')
+            ->setDescription(sprintf("Install project content schema and demo data.\nThis command looks into directory defined by --path option and looks for all files which matches pattern [^[0-9]{3}_[A-z_0-9\-]+\.(yml|php)] and sorts them out by file name.\nIf you specify --seed option then only files from `./%s` sub-folder will be loaded.", self::SEED_DIR_NAME))
             ->addOption('path', 'p', InputOption::VALUE_OPTIONAL, 'The directory to load the seed data from.', 'src/AppBundle/Installer')
             ->addOption('force', null, InputOption::VALUE_NONE, 'Use this flag to force installation.')
             ->addOption('lang', null, InputOption::VALUE_OPTIONAL, 'Set default language code.', 'eng-GB')
-            ->addOption('demo', null, InputOption::VALUE_NONE, 'Load demo data?')
+            ->addOption('seed', null, InputOption::VALUE_NONE, 'Load only seed data?')
         ;
     }
 
@@ -58,23 +63,21 @@ class InstallCommand extends ContainerAwareCommand
         $this->io         = new SymfonyStyle($input, $output);
         $migrationService = $this->getMigrationsService();
 
-        $seedPath = $input->getOption('path') . '/seed';
-        if (!file_exists($seedPath) || !is_dir($seedPath)) {
-            throw new \LogicException(sprintf('Directory `%s` for migrations does not exist or is not directory!', $seedPath));
+        $installerPath  = $input->getOption('path');
+        if (!file_exists($installerPath) || !is_dir($installerPath)) {
+            throw new \LogicException(sprintf('Directory `%s` for migrations does not exist or is not directory!', $installerPath));
         }
 
-        $definitions = $this->getMigrationDefinitions($seedPath);
-
-        $demoPath = $input->getOption('path') . '/demo';
-        if ($input->getOption('demo')) {
-            if (!file_exists($demoPath) || !is_dir($demoPath)) {
-                throw new \LogicException(sprintf('Directory `%s` does not exist or is not directory! Either remove option --demo or create directory.', $demoPath));
+        if ($input->getOption('seed')) {
+            $installerPath .= '/' . self::SEED_DIR_NAME;
+            if (!file_exists($installerPath) || !is_dir($installerPath)) {
+                throw new \LogicException(sprintf('Directory `%s` does not exist or is not directory! Either remove option --seed or create directory.', $installerPath));
             }
-            $definitions = array_merge($definitions, $this->getMigrationDefinitions($demoPath));
         }
 
+        $definitions = $this->getMigrationDefinitions($installerPath);
         if ($input->getOption('force')) {
-            foreach ($definitions as $filename => $definition) {
+            foreach ($definitions as $definition) {
                 $migrationService->executeMigration($definition, true, $input->getOption('lang'));
             }
         }
@@ -100,7 +103,7 @@ class InstallCommand extends ContainerAwareCommand
         /** @var SplFileInfo $file */
         foreach ($this->findFiles($path) as $file) {
             if ($file->isFile()) {
-                $name                = $file->getFilename();
+                $name                = sprintf('%s_%s', $file->getRelativePath(), $file->getFilename());
                 $migrationDefinition = new MigrationDefinition(
                     $name,
                     $file->getRealPath(),
@@ -113,13 +116,13 @@ class InstallCommand extends ContainerAwareCommand
                 } else {
                     $migration = $this->getMigration($migrationDefinition->name);
                     if (is_null($migration) || $migration->status === Migration::STATUS_TODO) {
-                        $definitions[$name] = $migrationDefinition;
+                        $definitions[] = $migrationDefinition;
                         $notes              = 'Ok';
                     } else {
                         switch ($migration->status) {
                             case Migration::STATUS_FAILED:
                                 $notes              = '<error>Failed</error>';
-                                $definitions[$name] = $migrationDefinition;
+                                $definitions[] = $migrationDefinition;
                                 break;
                             case Migration::STATUS_PARTIALLY_DONE:
                                 $notes = '<error>Partially done</error>';
@@ -136,6 +139,11 @@ class InstallCommand extends ContainerAwareCommand
                     }
                 }
 
+                if ($file->getRelativePath() === self::SEED_DIR_NAME) {
+                    $name = $file->getFilename() . ' <comment>(seed)</comment>';
+                } else {
+                    $name = sprintf('%s (%s)', $file->getFilename(), $file->getRelativePath());
+                }
                 $data[] = array(
                     $i++,
                     $name,
@@ -191,8 +199,14 @@ class InstallCommand extends ContainerAwareCommand
             ->in($path)
             ->name('/^[0-9]{3}_[A-z_0-9\-]+\.(yml|php)/')
             ->files()
-            ->sort(function (\SplFileInfo $f1, \SplFileInfo $f2) {
-                return strcmp($f1->getFilename(), $f2->getFilename());
+            ->sort(function (SplFileInfo $f1, SplFileInfo $f2) {
+                // modify file name so we add relative path between sorting numbers and name of the file so we get same sorting as directories are sorted
+                // Example: _seed/010_my_migration.yml > 010__seed_my_migration.yml
+                // Example: demo/013_my_migration.yml > 013_demo_my_migration.yml
+                $f1Name = sprintf('%s_%s_%s', substr($f1->getFilename(), 0, 3), $f1->getRelativePath(), substr($f1->getFilename(), 4));
+                $f2Name = sprintf('%s_%s_%s', substr($f2->getFilename(), 0, 3), $f2->getRelativePath(), substr($f2->getFilename(), 4));
+
+                return strcmp($f1Name, $f2Name);
             })
         ;
 
