@@ -55,9 +55,9 @@ services:
       arguments:
           - "%origammi.ez_app.main_language_code%"
           - "%ezpublish.siteaccesses_by_language%"
+          - "@ezpublish.siteaccess"
           - "@ezpublish.config.resolver"
       calls:
-          - ['setSiteAccess', ['@ezpublish.siteaccess']]
           - ['setLocaleConverter', ['@ezpublish.locale.converter']]
 
 

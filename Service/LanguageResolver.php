@@ -47,24 +47,19 @@ class LanguageResolver
     /**
      * @param string                  $defaultLanguageCode
      * @param array                   $siteAccessesByLanguage
+     * @param SiteAccess              $siteAccess
      * @param ConfigResolverInterface $configResolver
      */
     public function __construct(
         $defaultLanguageCode,
         $siteAccessesByLanguage,
+        SiteAccess $siteAccess,
         ConfigResolverInterface $configResolver
     ) {
         $this->defaultLanguage        = $defaultLanguageCode;
         $this->siteAccessesByLanguage = $siteAccessesByLanguage;
+        $this->siteaccess               = $siteAccess;
         $this->configResolver         = $configResolver;
-    }
-
-    /**
-     * @param SiteAccess $siteaccess
-     */
-    public function setSiteAccess(SiteAccess $siteaccess)
-    {
-        $this->siteaccess = $siteaccess;
     }
 
     /**
@@ -83,12 +78,22 @@ class LanguageResolver
         return $this->configResolver->getParameter('default', 'ezsettings', 'siteacess');
     }
 
+
+    /**
+     * @return string
+     */
+    public function getSiteAccessName()
+    {
+        return $this->siteaccess->name;
+    }
+
+
     /**
      * @return string
      */
     public function getSiteAccess()
     {
-        return $this->siteaccess->name;
+        return $this->siteaccess;
     }
 
     /**
