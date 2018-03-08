@@ -149,7 +149,7 @@ class ContentApiService
 
         $searchResult = $this->searchService->findLocations($queryFactory->createLocationQuery());
 
-        return $this->findByIds($searchResult);
+        return $searchResult->totalCount ? $this->findByIds($searchResult) : [];
     }
 
     /**
@@ -181,7 +181,7 @@ class ContentApiService
 
         $searchResult = $this->searchService->findLocations($queryFactory->createLocationQuery());
 
-        return $this->findByIds($searchResult);
+        return $searchResult->totalCount ? $this->findByIds($searchResult) : [];
     }
 
     /**
