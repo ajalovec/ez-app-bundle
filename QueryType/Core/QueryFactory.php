@@ -36,6 +36,11 @@ class QueryFactory
     protected $visible = true;
 
     /**
+     * @var string|null
+     */
+    protected $language;
+
+    /**
      * @var Criterion[]
      */
     protected $filters = [];
@@ -98,6 +103,10 @@ class QueryFactory
 
         if (is_bool($this->visible)) {
             $filters[] = new Criterion\Visibility($this->visible ? Criterion\Visibility::VISIBLE : Criterion\Visibility::HIDDEN);
+        }
+
+        if (is_string($this->language) && strlen($this->language)) {
+            $filters[] = new Criterion\LanguageCode($this->language);
         }
 
         if (!empty($this->allowedContentTypes)) {
@@ -269,6 +278,17 @@ class QueryFactory
         return $this;
     }
 
+    /**
+     * @param string|null $language
+     *
+     * @return $this
+     */
+    public function setLanguage($language = null)
+    {
+        $this->language = $language;
+
+        return $this;
+    }
 
     /**
      * @param bool $performCount
