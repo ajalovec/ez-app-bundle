@@ -2,10 +2,12 @@
 
 namespace Origammi\Bundle\EzAppBundle\Service;
 
+use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\Core\Base\Exceptions\NotFoundException;
 use eZ\Publish\Core\MVC\ConfigResolverInterface;
 use eZ\Publish\Core\MVC\Symfony\Locale\LocaleConverterInterface;
 use eZ\Publish\Core\MVC\Symfony\SiteAccess;
+use eZ\Publish\Core\Repository\URLAliasService;
 use Symfony\Component\HttpFoundation\Request;
 
 
@@ -43,23 +45,31 @@ class LanguageResolver
      */
     private $localeConverter;
 
+    /**
+     * @var URLAliasService
+     */
+    private $urlAliasService;
+
 
     /**
-     * @param string                  $defaultLanguageCode
-     * @param array                   $siteAccessesByLanguage
-     * @param SiteAccess              $siteAccess
-     * @param ConfigResolverInterface $configResolver
+     * @param string                                     $defaultLanguageCode
+     * @param array                                      $siteAccessesByLanguage
+     * @param SiteAccess                                 $siteAccess
+     * @param ConfigResolverInterface                    $configResolver
+     * @param \eZ\Publish\API\Repository\URLAliasService $urlAliasService
      */
     public function __construct(
         $defaultLanguageCode,
         $siteAccessesByLanguage,
         SiteAccess $siteAccess,
-        ConfigResolverInterface $configResolver
+        ConfigResolverInterface $configResolver,
+        \eZ\Publish\API\Repository\URLAliasService $urlAliasService
     ) {
         $this->defaultLanguage        = $defaultLanguageCode;
         $this->siteAccessesByLanguage = $siteAccessesByLanguage;
-        $this->siteaccess               = $siteAccess;
+        $this->siteaccess             = $siteAccess;
         $this->configResolver         = $configResolver;
+        $this->urlAliasService        = $urlAliasService;
     }
 
     /**
@@ -223,5 +233,31 @@ class LanguageResolver
         }
 
         return $languages;
+    }
+
+
+    /**
+     * @param Location $location
+     * @param string|null   $langCode
+     *
+     * @return bool
+     */
+    public function isLocationLangAvailable(Location $location, $langCode = null)
+    {
+        $aliases = $this->urlAliasService->listLocationAliases($location, false, $langCode ?: $this->getLanguage(), true);
+
+        if (count($aliases) === 0) {
+            $aliases = $this->urlAliasService->listLocationAliases($location, false, $this->defaultLanguage, true);
+
+            if (count($aliases)) {
+                $alias = $aliases[0];
+
+                return $alias->alwaysAvailable;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 }

@@ -57,6 +57,7 @@ services:
           - "%ezpublish.siteaccesses_by_language%"
           - "@ezpublish.siteaccess"
           - "@ezpublish.config.resolver"
+          - '@ezpublish.api.service.url_alias'
       calls:
           - ['setLocaleConverter', ['@ezpublish.locale.converter']]
 
@@ -104,6 +105,7 @@ services:
       class: Origammi\Bundle\EzAppBundle\Twig\LocationExtension
       arguments:
         - '@origammi.ez_app.repository.location_api'
+        - '@origammi.ez_app.service.language_resolver'
       tags:
           - { name: twig.extension }
 

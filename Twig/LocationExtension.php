@@ -7,6 +7,7 @@ namespace Origammi\Bundle\EzAppBundle\Twig;
 
 use eZ\Publish\API\Repository\Values\Content\Location;
 use Origammi\Bundle\EzAppBundle\Repository\LocationApiService;
+use Origammi\Bundle\EzAppBundle\Service\LanguageResolver;
 use Twig_Extension;
 
 /**
@@ -23,10 +24,18 @@ class LocationExtension extends Twig_Extension
      */
     private $locationApi;
 
+    /**
+     * @var LanguageResolver
+     */
+    private $languageResolver;
+
+
     public function __construct(
-        LocationApiService $locationApi
+        LocationApiService $locationApi,
+        LanguageResolver $languageResolver
     ) {
-        $this->locationApi = $locationApi;
+        $this->locationApi      = $locationApi;
+        $this->languageResolver = $languageResolver;
     }
 
     /**
@@ -45,9 +54,10 @@ class LocationExtension extends Twig_Extension
     public function getFunctions()
     {
         return [
-            new \Twig_SimpleFunction('app_load_location', [$this, 'loadLocation']),
-            new \Twig_SimpleFunction('app_load_location_children', [$this, 'loadLocationChildren']),
-            new \Twig_SimpleFunction('app_load_location_id', [$this, 'loadLocationId']),
+            new \Twig_SimpleFunction('app_load_location', [ $this, 'loadLocation' ]),
+            new \Twig_SimpleFunction('app_load_location_children', [ $this, 'loadLocationChildren' ]),
+            new \Twig_SimpleFunction('app_load_location_id', [ $this, 'loadLocationId' ]),
+            new \Twig_SimpleFunction('app_location_lang_available', [ $this, 'isLocationLangAvailable' ]),
         ];
     }
 
@@ -78,8 +88,9 @@ class LocationExtension extends Twig_Extension
     public function loadLocationChildren(Location $location, $contentTypes = null, $limit = null)
     {
         if (is_string($contentTypes)) {
-            $contentTypes = [$contentTypes];
+            $contentTypes = [ $contentTypes ];
         }
+
         return $this->locationApi->findByParent($location, $contentTypes, $limit);
     }
 
@@ -94,6 +105,18 @@ class LocationExtension extends Twig_Extension
     public function loadLocationId($id)
     {
         return $this->loadLocation($id)->id;
+    }
+
+
+    /**
+     * @param Location $location
+     * @param          $langCode
+     *
+     * @return bool
+     */
+    public function isLocationLangAvailable(Location $location, $langCode)
+    {
+        return $this->languageResolver->isLocationLangAvailable($location, $langCode);
     }
 
 }
