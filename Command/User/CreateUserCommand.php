@@ -86,7 +86,9 @@ EOT
         $user['password']   = $input->getArgument('password');
         $user['first_name'] = $user['last_name'] = $user['username'];
 
-        $this->getUserManager()->create($user, $userGroups);
+        $manager = $this->getUserManager();
+        $manager->loginAdminUser();
+        $manager->create($user, $userGroups);
 
         $output->writeln(sprintf('Created user <comment>%s</comment>', $user['username']));
     }

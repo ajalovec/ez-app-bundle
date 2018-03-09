@@ -48,6 +48,11 @@ EOT
      * @param InputInterface  $input
      * @param OutputInterface $output
      *
+     * @throws \eZ\Publish\API\Repository\Exceptions\ContentFieldValidationException
+     * @throws \eZ\Publish\API\Repository\Exceptions\ContentValidationException
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return int|null|void
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -55,9 +60,11 @@ EOT
         $username    = $input->getArgument('username');
         $password    = $input->getArgument('password');
 
-        $user = $this->getUserManager()->loadUserByLogin($username);
+        $manager = $this->getUserManager();
+        $manager->loginAdminUser();
+        $user = $manager->loadUserByLogin($username);
 
-        $this->getUserManager()->update($user, ['password' => $password]);
+        $manager->update($user, ['password' => $password]);
 
         $output->writeln(sprintf('Changed password for user <comment>%s</comment>', $username));
     }
