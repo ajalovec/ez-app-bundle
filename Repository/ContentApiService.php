@@ -104,6 +104,10 @@ class ContentApiService
     {
         $contentIds = RepositoryUtil::resolveContentIds($ids);
 
+        if (is_array($contentIds) && count($contentIds) === 0) {
+            return [];
+        }
+
         $queryFactory = QueryFactory::create()
             ->addFilter(new Criterion\ContentId($contentIds))
         ;
