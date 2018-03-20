@@ -49,11 +49,11 @@ class ContentTypeApiService
     /**
      * Try to resolve ContentType object from mixed $id argument
      * Accepted values:
-     *  id        - int|string
-     *  remote_id - string
-     *  object    - ContentType|Location|VersionInfo|ContentInfo
+     *  id         - int
+     *  identifier - string
+     *  object     - Location|VersionInfo|ContentType|ContentInfo|Content
      *
-     * @param Location|VersionInfo|ContentInfo|int|string $id
+     * @param int|string|Location|VersionInfo|ContentType|ContentInfo|Content $id Can be either id, identifier, Location, VersionInfo, ContentType, ContentInfo or Content object
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return ContentType
@@ -66,10 +66,10 @@ class ContentTypeApiService
 
         $primaryId = $this->resolveId($id);
         if ($primaryId !== null) {
-            return $this->contentTypeService->loadContentType((int)$primaryId);
+            return $this->contentTypeService->loadContentType($primaryId);
         }
 
-        return $this->contentTypeService->loadContentTypeByIdentifier($id);
+        return $this->contentTypeService->loadContentTypeByIdentifier((string)$id);
     }
 
     /**
@@ -98,10 +98,10 @@ class ContentTypeApiService
     /**
      * Try to resolve ContentType id from mixed $id argument
      * Accepted values:
-     *  remote_id - string
-     *  object    - Content|Location|VersionInfo|ContentInfo
+     *  id     - int
+     *  object - Location|VersionInfo|ContentType|ContentInfo|Content
      *
-     * @param Content|Location|VersionInfo|ContentInfo|string $object
+     * @param int|Location|VersionInfo|ContentType|ContentInfo|Content $object Can be either id, Location, VersionInfo, ContentType, ContentInfo or Content object
      *
      * @return int|null
      */

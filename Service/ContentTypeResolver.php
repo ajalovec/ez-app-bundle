@@ -8,6 +8,7 @@ namespace Origammi\Bundle\EzAppBundle\Service;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Location;
+use eZ\Publish\API\Repository\Values\Content\VersionInfo;
 use eZ\Publish\API\Repository\Values\ContentType\ContentType;
 use Origammi\Bundle\EzAppBundle\Repository\ContentTypeApiService;
 
@@ -44,23 +45,21 @@ class ContentTypeResolver
     }
 
     /**
-     * @param int|string|Location|ContentInfo|Content $contentType Can be either id, identifier, Location, ContentInfo or Content object
+     * @param int|string|Location|VersionInfo|ContentType|ContentInfo|Content $contentType Can be either id, identifier, Location, VersionInfo, ContentType, ContentInfo or Content object
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return ContentType
      */
     public function getContentType($contentType)
     {
-        $contentType = $this->contentTypeService->resolveId($contentType);
+        $contentTypeId = $this->contentTypeService->resolveId($contentType);
 
-        if (is_scalar($contentType)) {
-            if (is_string($contentType) && isset($this->loadedTypesIdentifiers[$contentType])) {
-                $contentType = $this->loadedTypesIdentifiers[$contentType];
-            }
+        if (null === $contentTypeId && is_string($contentType) && isset($this->loadedTypesIdentifiers[$contentType])) {
+            $contentTypeId = $this->loadedTypesIdentifiers[$contentType];
+        }
 
-            if (isset($this->loadedTypes[$contentType])) {
-                return $this->loadedTypes[$contentType];
-            }
+        if (null !== $contentTypeId && isset($this->loadedTypes[$contentTypeId])) {
+            return $this->loadedTypes[$contentTypeId];
         }
 
         $contentType = $this->contentTypeService->load($contentType);
@@ -72,8 +71,8 @@ class ContentTypeResolver
     }
 
     /**
-     * @param string|array                     $identifier
-     * @param int|Location|ContentInfo|Content $content Can be either id, Location, ContentInfo or Content object
+     * @param string|array                                                    $identifier
+     * @param int|string|Location|VersionInfo|ContentType|ContentInfo|Content $content Can be either id, identifier, Location, VersionInfo, ContentType, ContentInfo or Content object
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return bool

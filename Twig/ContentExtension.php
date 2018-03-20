@@ -3,7 +3,10 @@
 namespace Origammi\Bundle\EzAppBundle\Twig;
 
 use eZ\Publish\API\Repository\Values\Content\Content;
+use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Location;
+use eZ\Publish\API\Repository\Values\Content\VersionInfo;
+use eZ\Publish\API\Repository\Values\ContentType\ContentType;
 use Origammi\Bundle\EzAppBundle\Repository\ContentApiService;
 use Origammi\Bundle\EzAppBundle\Service\ContentTypeResolver;
 use Origammi\Bundle\EzAppBundle\Service\FieldResolver;
@@ -116,8 +119,9 @@ class ContentExtension extends Twig_Extension
     public function loadContentChildren(Location $location, $contentTypes = null, $limit = null)
     {
         if (is_string($contentTypes)) {
-            $contentTypes = [$contentTypes];
+            $contentTypes = [ $contentTypes ];
         }
+
         return $this->contentApi->findByParent($location, $contentTypes, $limit);
     }
 
@@ -135,26 +139,21 @@ class ContentExtension extends Twig_Extension
     }
 
     /**
-     * @param Content|Location|null $content
-     * @param string|array          $contentTypeIdentifier
+     * @param int|string|Location|VersionInfo|ContentType|ContentInfo|Content $content Can be either id, identifier, Location, VersionInfo, ContentType, ContentInfo or Content object
+     * @param string|array                                                    $contentTypeIdentifier
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return bool
      */
     public function isContentType($content = null, $contentTypeIdentifier)
     {
-        if ($content instanceof Content || $content instanceof Location) {
-
-            return $content
-                ? $this->contentTypeResolver->isContentType($contentTypeIdentifier, $content->contentInfo)
-                : false;
-        }
-
-        return false;
+        return $content
+            ? $this->contentTypeResolver->isContentType($contentTypeIdentifier, $content->contentInfo)
+            : false;
     }
 
     /**
-     * @param int|string|Location|Content $id
+     * @param int|string|Location|VersionInfo|ContentType|ContentInfo|Content $id Can be either id, identifier, Location, VersionInfo, ContentType, ContentInfo or Content object
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return \eZ\Publish\API\Repository\Values\ContentType\ContentType
@@ -165,14 +164,14 @@ class ContentExtension extends Twig_Extension
     }
 
     /**
-     * @param int|string|Location|Content $id
+     * @param int|string|Location|VersionInfo|ContentType|ContentInfo|Content $id Can be either id, identifier, Location, VersionInfo, ContentType, ContentInfo or Content object
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @return string
      */
     public function getContentTypeName($id)
     {
-        return $this->contentTypeResolver->getContentType($id)->identifier;
+        return $this->getContentType($id)->identifier;
     }
 
     /**
