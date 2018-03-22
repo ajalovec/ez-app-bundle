@@ -207,4 +207,18 @@ class ContentApiService
         return $searchResult;
     }
 
+    /**
+     * @param Query $query
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
+     * @return int
+     */
+    public function count(Query $query)
+    {
+        $query->performCount = true;
+        $searchResult = $this->searchService->findContentInfo($query);
+
+        return $searchResult->totalCount;
+    }
+
 }
