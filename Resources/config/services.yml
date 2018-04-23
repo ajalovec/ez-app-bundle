@@ -88,12 +88,14 @@ services:
   #
   origammi.ez_app.twig.extension.core:
       class: Origammi\Bundle\EzAppBundle\Twig\Extension\CoreExtension
+      public: false
       arguments: ["@origammi.ez_app.repository.content_api"]
       tags:
           - {name: twig.extension}
 
   origammi.ez_app.twig.content_extension:
       class: Origammi\Bundle\EzAppBundle\Twig\ContentExtension
+      public: false
       arguments:
         - '@origammi.ez_app.repository.content_api'
         - '@origammi.ez_app.service.content_type_resolver'
@@ -103,6 +105,7 @@ services:
 
   origammi.ez_app.twig.location_extension:
       class: Origammi\Bundle\EzAppBundle\Twig\LocationExtension
+      public: false
       arguments:
         - '@origammi.ez_app.repository.location_api'
         - '@origammi.ez_app.service.language_resolver'
@@ -113,7 +116,7 @@ services:
   # Controllers
   #
   origammi.ez_app.controller.language_switcher:
-          class: Origammi\Bundle\EzAppBundle\Controller\LanguageSwitcherController
-          arguments:
-              - "@origammi.ez_app.service.language_resolver"
-              - "@ezpublish.controller.content.view"
+      class: Origammi\Bundle\EzAppBundle\Controller\LanguageSwitcherController
+      arguments:
+          - "@origammi.ez_app.service.language_resolver"
+          - "@ezpublish.controller.content.view"
