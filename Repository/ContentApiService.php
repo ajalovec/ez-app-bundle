@@ -96,11 +96,13 @@ class ContentApiService
 
     /**
      * @param array|SearchResult|LocationList $ids
+     * @param int|null   $limit
+     * @param int|null   $offset
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @return Content[]
      */
-    public function findByIds($ids)
+    public function findByIds($ids, $limit = null, $offset = null)
     {
         $contentIds = RepositoryUtil::resolveContentIds($ids);
 
@@ -112,12 +114,20 @@ class ContentApiService
             ->addFilter(new Criterion\ContentId($contentIds))
         ;
 
+        if (is_int($limit)) {
+            $queryFactory->setLimit($limit);
+        }
+
+        if (is_int($offset)) {
+            $queryFactory->setOffset($offset);
+        }
+
         if (!empty($allowed_content_types)) {
             $queryFactory->setAllowedContentTypes($allowed_content_types);
         }
 
         $searchResult = $this->searchService->findContent($queryFactory->createContentQuery());
-
+        
         foreach ($searchResult->searchHits as $searchHit) {
             $contentIds[$searchHit->valueObject->id] = $searchHit->valueObject;
         }
@@ -153,7 +163,7 @@ class ContentApiService
 
         $searchResult = $this->searchService->findLocations($queryFactory->createLocationQuery());
 
-        return $searchResult->totalCount ? $this->findByIds($searchResult) : [];
+        return $searchResult->totalCount ? $this->findByIds($searchResult, $limit, $offset) : [];
     }
 
     /**
@@ -185,7 +195,7 @@ class ContentApiService
 
         $searchResult = $this->searchService->findLocations($queryFactory->createLocationQuery());
 
-        return $searchResult->totalCount ? $this->findByIds($searchResult) : [];
+        return $searchResult->totalCount ? $this->findByIds($searchResult, $limit, $offset) : [];
     }
 
     /**
