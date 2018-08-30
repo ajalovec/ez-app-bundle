@@ -39,12 +39,14 @@ class ImageField
 
     public function getUri()
     {
-        return $this->thumb->uri;
+        return str_replace(' ', '%20', $this->thumb->uri);
+//        return $this->thumb->uri;
     }
 
     public function getOriginalUri()
     {
-        return $this->original->uri;
+        return str_replace(' ', '%20', $this->original->uri);
+//        return $this->original->uri;
     }
 
     public function getFileName()
