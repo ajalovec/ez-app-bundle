@@ -74,6 +74,7 @@ services:
           - "@ezpublish.fieldtype.ezrichtext.converter.output.xhtml5"
           - "@ezpublish.fieldtype.ezimage.variation_service"
           - "@ezpublish.translation_helper"
+          - "@origammi.ez_app.repository.content_type_api"
 
 
   origammi.ez_app.service.location_resolver:
