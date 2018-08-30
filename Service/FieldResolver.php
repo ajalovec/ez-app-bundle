@@ -125,6 +125,8 @@ class FieldResolver
                             return $field->value->bool;
                         case FieldType\Selection\Value::class:
                             return $field->value->selection;
+                        case FieldType\Date\Value::class:
+                            return $field->value->date;
                         case FieldType\Image\Value::class:
                             $image = $this->getImageVariation(
                                 $field,
@@ -132,7 +134,7 @@ class FieldResolver
                                 isset($params['variationName']) ? $params['variationName'] : 'original'
                             );
 
-                            return ['value' => $field->value, 'uri' => $image->uri];
+                            return ['value' => $field->value, 'uri' => $image->uri, 'image' => $image];
                         default:
                             return $field->value;
                     }
@@ -212,7 +214,7 @@ class FieldResolver
                     $variationName
                 );
 
-                return ['value' => $field->value, 'uri' => $image->uri];
+                return ['value' => $field->value, 'uri' => $image->uri, 'image' => $image];
             }
         }
 
@@ -240,5 +242,33 @@ class FieldResolver
                 );
             }
         }
+    }
+
+    public function getFileMimeType($file) {
+        if (function_exists('finfo_file')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $type = finfo_file($finfo, $file);
+            finfo_close($finfo);
+        } else {
+            require_once 'upgradephp/ext/mime.php';
+            $type = mime_content_type($file);
+        }
+
+        if (!$type || in_array($type, array('application/octet-stream', 'text/plain'))) {
+            $secondOpinion = exec('file -b --mime-type ' . escapeshellarg($file), $foo, $returnCode);
+            if ($returnCode === 0 && $secondOpinion) {
+                $type = $secondOpinion;
+            }
+        }
+
+        if (!$type || in_array($type, array('application/octet-stream', 'text/plain'))) {
+            require_once 'upgradephp/ext/mime.php';
+            $exifImageType = exif_imagetype($file);
+            if ($exifImageType !== false) {
+                $type = image_type_to_mime_type($exifImageType);
+            }
+        }
+
+        return $type;
     }
 }
