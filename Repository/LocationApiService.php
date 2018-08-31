@@ -39,15 +39,13 @@ class LocationApiService
      * @var SearchService
      */
     protected $searchService;
-    protected $languageResolver;
 
     /**
-     * LocationService constructor.
-     *
-     * @param LocationService  $locationService
-     * @param SearchService    $searchService
-     * @param LanguageResolver $languageResolver
+     * @var LanguageResolver
      */
+    protected $languageResolver;
+
+
     public function __construct(LocationService $locationService, SearchService $searchService, LanguageResolver $languageResolver)
     {
         $this->locationService  = $locationService;

@@ -17,6 +17,7 @@ services:
       arguments:
           - "@ezpublish.api.service.content"
           - "@ezpublish.api.service.search"
+          - "@origammi.ez_app.service.language_resolver"
 
   origammi.ez_app.repository.location_api:
       class: Origammi\Bundle\EzAppBundle\Repository\LocationApiService

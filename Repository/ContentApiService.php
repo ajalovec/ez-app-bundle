@@ -16,6 +16,7 @@ use eZ\Publish\API\Repository\Values\Content\Query\Criterion;
 use eZ\Publish\API\Repository\Values\Content\Search\SearchResult;
 use eZ\Publish\API\Repository\Values\Content\VersionInfo;
 use Origammi\Bundle\EzAppBundle\QueryType\Core\QueryFactory;
+use Origammi\Bundle\EzAppBundle\Service\LanguageResolver;
 use Origammi\Bundle\EzAppBundle\Utils\RepositoryUtil;
 
 /**
@@ -38,15 +39,15 @@ class ContentApiService
     protected $searchService;
 
     /**
-     * ContentService constructor.
-     *
-     * @param ContentService $contentService
-     * @param SearchService      $searchService
+     * @var LanguageResolver
      */
-    public function __construct(ContentService $contentService, SearchService $searchService)
+    protected $languageResolver;
+
+    public function __construct(ContentService $contentService, SearchService $searchService, LanguageResolver $languageResolver)
     {
-        $this->contentService = $contentService;
-        $this->searchService  = $searchService;
+        $this->contentService   = $contentService;
+        $this->searchService    = $searchService;
+        $this->languageResolver = $languageResolver;
     }
 
     /**
@@ -96,13 +97,14 @@ class ContentApiService
 
     /**
      * @param array|SearchResult|LocationList $ids
-     * @param int|null   $limit
-     * @param int|null   $offset
+     * @param int|null                        $limit
+     * @param int|null                        $offset
+     * @param string|null                     $languageCode
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @return Content[]
      */
-    public function findByIds($ids, $limit = null, $offset = null)
+    public function findByIds($ids, $limit = null, $offset = null, $languageCode = null)
     {
         $contentIds = RepositoryUtil::resolveContentIds($ids);
 
@@ -112,6 +114,7 @@ class ContentApiService
 
         $queryFactory = QueryFactory::create()
             ->addFilter(new Criterion\ContentId($contentIds))
+            ->setLanguage($languageCode ?: $this->languageResolver->getLanguage())
         ;
 
         if (is_int($limit)) {
@@ -122,12 +125,8 @@ class ContentApiService
             $queryFactory->setOffset($offset);
         }
 
-        if (!empty($allowed_content_types)) {
-            $queryFactory->setAllowedContentTypes($allowed_content_types);
-        }
-
         $searchResult = $this->searchService->findContent($queryFactory->createContentQuery());
-        
+
         foreach ($searchResult->searchHits as $searchHit) {
             $contentIds[$searchHit->valueObject->id] = $searchHit->valueObject;
         }
@@ -136,21 +135,23 @@ class ContentApiService
     }
 
     /**
-     * @param Location   $location
-     * @param array|null $allowed_content_types List of contentTypeIdentifiers to whitelist
-     * @param int|null   $limit
-     * @param int|null   $offset
+     * @param Location          $location
+     * @param array|string|null $allowed_content_types List of contentTypeIdentifiers to whitelist
+     * @param int|null          $limit
+     * @param int|null          $offset
+     * @param string|null       $languageCode
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @return Content[]
      */
-    public function findByParent(Location $location, array $allowed_content_types = null, $limit = null, $offset = null)
+    public function findByParent(Location $location, $allowed_content_types = null, $limit = null, $offset = null, $languageCode = null)
     {
         $queryFactory = QueryFactory::create()
+            ->setLanguage($languageCode ?: $this->languageResolver->getLanguage())
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\ParentLocationId($location->id))
-            ->setAllowedContentTypes($allowed_content_types)
+            ->setAllowedContentTypes((array)$allowed_content_types)
         ;
 
         if (is_int($limit)) {
@@ -167,22 +168,24 @@ class ContentApiService
     }
 
     /**
-     * @param Location   $location
-     * @param array|null $allowed_content_types List of contentTypeIdentifiers to whitelist
-     * @param int|null   $limit
-     * @param int|null   $offset
+     * @param Location          $location
+     * @param array|string|null $allowed_content_types List of contentTypeIdentifiers to whitelist
+     * @param int|null          $limit
+     * @param int|null          $offset
+     * @param string|null       $languageCode
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
      * @return Content[]
      */
-    public function findBySubtree(Location $location, array $allowed_content_types = null, $limit = null, $offset = null)
+    public function findBySubtree(Location $location, $allowed_content_types = null, $limit = null, $offset = null, $languageCode = null)
     {
         $queryFactory = QueryFactory::create()
+            ->setLanguage($languageCode ?: $this->languageResolver->getLanguage())
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\Subtree($location->pathString))
             ->addFilter(new Criterion\Location\Depth(Criterion\Operator::GT, $location->depth))
-            ->setAllowedContentTypes($allowed_content_types)
+            ->setAllowedContentTypes((array)$allowed_content_types)
         ;
 
         if (is_int($limit)) {
@@ -226,7 +229,7 @@ class ContentApiService
     public function count(Query $query)
     {
         $query->performCount = true;
-        $searchResult = $this->searchService->findContentInfo($query);
+        $searchResult        = $this->searchService->findContentInfo($query);
 
         return $searchResult->totalCount;
     }
