@@ -89,10 +89,10 @@ class ContentApiService
         }
 
         if ($primaryId = RepositoryUtil::resolveContentId($id)) {
-            return $this->contentService->loadContent($primaryId);
+            return $this->contentService->loadContent($primaryId, $this->languageResolver->getPrioritizedLanguages());
         }
 
-        return $this->contentService->loadContentByRemoteId((string)$id);
+        return $this->contentService->loadContentByRemoteId((string)$id, $this->languageResolver->getPrioritizedLanguages());
     }
 
     /**
@@ -114,8 +114,11 @@ class ContentApiService
 
         $queryFactory = QueryFactory::create()
             ->addFilter(new Criterion\ContentId($contentIds))
-            ->setLanguage($languageCode ?: $this->languageResolver->getLanguage())
         ;
+
+        if ($languageCode) {
+            $queryFactory->setLanguage(is_string($languageCode) ? $languageCode : $this->languageResolver->getLanguage());
+        }
 
         if (is_int($limit)) {
             $queryFactory->setLimit($limit);
@@ -148,11 +151,14 @@ class ContentApiService
     public function findByParent(Location $location, $allowed_content_types = null, $limit = null, $offset = null, $languageCode = null)
     {
         $queryFactory = QueryFactory::create()
-            ->setLanguage($languageCode ?: $this->languageResolver->getLanguage())
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\ParentLocationId($location->id))
             ->setAllowedContentTypes((array)$allowed_content_types)
         ;
+
+        if ($languageCode) {
+            $queryFactory->setLanguage(is_string($languageCode) ? $languageCode : $this->languageResolver->getLanguage());
+        }
 
         if (is_int($limit)) {
             $queryFactory->setLimit($limit);
@@ -181,12 +187,15 @@ class ContentApiService
     public function findBySubtree(Location $location, $allowed_content_types = null, $limit = null, $offset = null, $languageCode = null)
     {
         $queryFactory = QueryFactory::create()
-            ->setLanguage($languageCode ?: $this->languageResolver->getLanguage())
             ->setSort($location->getSortClauses())
             ->addFilter(new Criterion\Subtree($location->pathString))
             ->addFilter(new Criterion\Location\Depth(Criterion\Operator::GT, $location->depth))
             ->setAllowedContentTypes((array)$allowed_content_types)
         ;
+
+        if ($languageCode) {
+            $queryFactory->setLanguage(is_string($languageCode) ? $languageCode : $this->languageResolver->getLanguage());
+        }
 
         if (is_int($limit)) {
             $queryFactory->setLimit($limit);

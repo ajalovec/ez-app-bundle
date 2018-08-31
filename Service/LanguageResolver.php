@@ -197,6 +197,15 @@ class LanguageResolver
             $this->configResolver->getParameter('related_siteaccesses');
     }
 
+
+    /**
+     * @return array
+     */
+    public function getPrioritizedLanguages()
+    {
+        return (array)$this->configResolver->getParameter('languages');
+    }
+
     /**
      * Returns the list of all available languages, including the ones configured in related SiteAccesses.
      *
