@@ -6,10 +6,12 @@
 namespace Origammi\Bundle\EzAppBundle\Repository;
 
 use eZ\Publish\API\Repository\Values\Content\Content;
+use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\API\Repository\Values\Content\Location;
 use eZ\Publish\API\Repository\Values\Content\LocationQuery;
 use eZ\Publish\API\Repository\Values\Content\Query;
 use eZ\Publish\API\Repository\Values\Content\Search\SearchResult;
+use eZ\Publish\API\Repository\Values\Content\VersionInfo;
 use eZ\Publish\Core\QueryType\QueryType;
 use eZ\Publish\Core\QueryType\QueryTypeRegistry;
 use Origammi\Bundle\EzAppBundle\Repository\Traits\ContentServiceInterface;
@@ -53,7 +55,12 @@ class ApiService implements SearchServiceInterface, LocationServiceInterface, Co
     }
 
     /**
-     * @param $id
+     * Accepted values:
+     *  id        - int|string
+     *  remote_id - string
+     *  object    - Content|Location|VersionInfo|ContentInfo
+     *
+     * @param Content|Location|VersionInfo|ContentInfo|int|string $id
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException

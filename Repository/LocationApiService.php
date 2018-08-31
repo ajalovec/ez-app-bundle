@@ -15,8 +15,10 @@ use eZ\Publish\API\Repository\Values\Content\LocationQuery;
 use eZ\Publish\API\Repository\Values\Content\Query;
 use eZ\Publish\API\Repository\Values\Content\Query\Criterion;
 use eZ\Publish\API\Repository\Values\Content\Search\SearchResult;
+use eZ\Publish\Core\Base\Exceptions\NotFoundException;
 use eZ\Publish\SPI\Persistence\Content\VersionInfo;
 use Origammi\Bundle\EzAppBundle\QueryType\Core\QueryFactory;
+use Origammi\Bundle\EzAppBundle\Service\LanguageResolver;
 use Origammi\Bundle\EzAppBundle\Utils\RepositoryUtil;
 
 /**
@@ -37,17 +39,20 @@ class LocationApiService
      * @var SearchService
      */
     protected $searchService;
+    protected $languageResolver;
 
     /**
      * LocationService constructor.
      *
-     * @param LocationService $locationService
-     * @param SearchService   $searchService
+     * @param LocationService  $locationService
+     * @param SearchService    $searchService
+     * @param LanguageResolver $languageResolver
      */
-    public function __construct(LocationService $locationService, SearchService $searchService)
+    public function __construct(LocationService $locationService, SearchService $searchService, LanguageResolver $languageResolver)
     {
-        $this->locationService = $locationService;
-        $this->searchService   = $searchService;
+        $this->locationService  = $locationService;
+        $this->searchService    = $searchService;
+        $this->languageResolver = $languageResolver;
     }
 
 
@@ -68,17 +73,21 @@ class LocationApiService
      *  object    - Content|Location|VersionInfo|ContentInfo
      *
      * @param Content|Location|VersionInfo|ContentInfo|int|string $id
+     * @param bool|null                                           $isAvailable
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Location|Location[]
      */
-    public function load($id)
+    public function load($id, $isAvailable = null)
     {
         if (is_array($id)) {
             $locations = [];
             foreach ($id as $i) {
-                $locations[] = $this->load($i);
+                if (!$location = $this->load($i, $isAvailable)) {
+                    continue;
+                }
+                $locations[] = $location;
             }
 
             return $locations;
@@ -89,34 +98,48 @@ class LocationApiService
         }
 
         if ($primaryId = RepositoryUtil::resolveLocationId($id)) {
-            return $this->locationService->loadLocation((int)$primaryId);
+            return $this->loadById($primaryId, $isAvailable);
         }
 
-        return $this->locationService->loadLocationByRemoteId((string)$id);
+        return $this->loadByRemoteId($id, $isAvailable);
     }
 
     /**
-     * @param int $id
+     * @param int       $id
+     * @param bool|null $isAvailable
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
-     * @return Location
+     * @return Location|null
      */
-    public function loadById($id)
+    public function loadById($id, $isAvailable = null)
     {
-        return $this->locationService->loadLocation((int)$id);
+        $location = $this->locationService->loadLocation((int)$id);
+
+        if (is_bool($isAvailable) && $isAvailable !== $this->isAvailable($location)) {
+            return null;
+        }
+
+        return $location;
     }
 
     /**
-     * @param string $id
+     * @param string    $id
+     * @param bool|null $isAvailable
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
-     * @return Location
+     * @return Location|null
      */
-    public function loadByRemoteId($id)
+    public function loadByRemoteId($id, $isAvailable = null)
     {
-        return $this->locationService->loadLocationByRemoteId((string)$id);
+        $location = $this->locationService->loadLocationByRemoteId((string)$id);
+
+        if (is_bool($isAvailable) && $isAvailable !== $this->isAvailable($location)) {
+            return null;
+        }
+
+        return $location;
     }
 
     /**
@@ -253,4 +276,34 @@ class LocationApiService
 
         return $searchResult;
     }
+
+
+    /**
+     * @param Location    $location
+     * @param string|null $language
+     *
+     * @return bool
+     */
+    public function isAvailable(Location $location, $language = null)
+    {
+        return $location->contentInfo->isPublished() && !$location->hidden && $this->languageResolver->isLocationLangAvailable($location, $language);
+    }
+
+
+    /**
+     * @param Location    $location
+     * @param string|null $language
+     *
+     * @throws NotFoundException
+     * @return Location
+     */
+    public function isAvailableException(Location $location, $language = null)
+    {
+        if (!$this->isAvailable($location, $language)) {
+            throw new NotFoundException('Location', "id: {$location->id}, language: {$this->languageResolver->getLanguage()}, siteaccess: {$this->languageResolver->getSiteAccessName()}");
+        }
+
+        return $location;
+    }
+
 }

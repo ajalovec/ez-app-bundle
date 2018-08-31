@@ -99,7 +99,7 @@ class LanguageResolver
 
 
     /**
-     * @return string
+     * @return SiteAccess
      */
     public function getSiteAccess()
     {
@@ -237,14 +237,14 @@ class LanguageResolver
 
 
     /**
-     * @param Location $location
-     * @param string|null   $langCode
+     * @param Location    $location
+     * @param string|null $languageCode
      *
      * @return bool
      */
-    public function isLocationLangAvailable(Location $location, $langCode = null)
+    public function isLocationLangAvailable(Location $location, $languageCode = null)
     {
-        $aliases = $this->urlAliasService->listLocationAliases($location, false, $langCode ?: $this->getLanguage(), true);
+        $aliases = $this->urlAliasService->listLocationAliases($location, false, $languageCode ?: $this->getLanguage(), true);
 
         if (count($aliases) === 0) {
             $aliases = $this->urlAliasService->listLocationAliases($location, false, $this->defaultLanguage, true);

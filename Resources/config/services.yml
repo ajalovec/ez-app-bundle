@@ -23,6 +23,7 @@ services:
       arguments:
           - "@ezpublish.api.service.location"
           - "@ezpublish.api.service.search"
+          - "@origammi.ez_app.service.language_resolver"
 
   origammi.ez_app.repository.content_type_api:
       class: Origammi\Bundle\EzAppBundle\Repository\ContentTypeApiService
