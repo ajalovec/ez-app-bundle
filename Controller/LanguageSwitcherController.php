@@ -50,7 +50,7 @@ class LanguageSwitcherController
             $template,
             [
                 'currentLanguage' => $this->languageResolver->getLanguageForRequest($request),
-                'languages'       => $this->languageResolver->getLanguages(),
+                'languages'       => $this->languageResolver->getTranslationLanguages(),
             ]
         );
     }

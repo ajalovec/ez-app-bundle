@@ -332,7 +332,7 @@ class FieldResolver
      * @param string|string[] $fieldName Can be String 'prop1,prop2' or array ['prop1', 'prop2']
      * @param string          $variationName
      *
-     * @return ImageField|array|null ['uri' => 'url/to/image', 'value' => ['image fields']]
+     * @return ImageField|null ['uri' => 'url/to/image', 'value' => ['image fields']]
      */
     public function getImageValue(Content $content, $fieldName, $variationName = null)
     {

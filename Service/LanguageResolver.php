@@ -80,6 +80,15 @@ class LanguageResolver
         $this->localeConverter = $localeConverter;
     }
 
+
+    /**
+     * @return LocaleConverterInterface
+     */
+    public function getLocaleConverter()
+    {
+        return $this->localeConverter;
+    }
+
     /**
      * @return string
      */
@@ -90,21 +99,39 @@ class LanguageResolver
 
 
     /**
-     * @return string
-     */
-    public function getSiteAccessName()
-    {
-        return $this->siteaccess->name;
-    }
-
-
-    /**
      * @return SiteAccess
      */
     public function getSiteAccess()
     {
         return $this->siteaccess;
     }
+
+    /**
+     * Returns the list of all available languages, including the ones configured in related SiteAccesses.
+     *
+     * @return array
+     */
+    public function getSiteAccesses()
+    {
+        $siteAccesses = array_intersect(
+            $this->configResolver->getParameter('translation_siteaccesses'),
+            $this->configResolver->getParameter('related_siteaccesses')
+        );
+
+        return $siteAccesses;
+    }
+
+    /**
+     * Returns the list of all available languages, including the ones configured in related SiteAccesses.
+     *
+     * @return array
+     */
+    public function getTranslationSiteAccesses()
+    {
+        return $this->configResolver->getParameter('translation_siteaccesses') ?:
+            $this->configResolver->getParameter('related_siteaccesses');
+    }
+
 
     /**
      * @param null|string $language
@@ -136,29 +163,46 @@ class LanguageResolver
     }
 
     /**
+     * @param bool $posix
      * @return string
      */
-    public function getDefaultLanguage()
+    public function getDefaultLanguage($posix = null)
     {
-        return $this->defaultLanguage;
+        return !$posix ? $this->defaultLanguage : $this->localeConverter->convertToPOSIX($this->defaultLanguage);
     }
 
     /**
+     * @param bool $posix
+     *
      * @return string
      */
-    public function getLanguage()
+    public function getLanguage($posix = null)
     {
-        return $this->configResolver->getParameter('languages')[0];
+        $lang = $this->configResolver->getParameter('languages')[0];
+        return !$posix ? $lang : $this->localeConverter->convertToPOSIX($lang);
+    }
+
+
+    /**
+     * @param bool $posix
+     * @return array
+     */
+    public function getLanguages($posix = null)
+    {
+        $langs = (array)$this->configResolver->getParameter('languages');
+        return !$posix ? $langs : array_map([$this->localeConverter, 'convertToPOSIX'], $langs);
     }
 
     /**
      * @param null|string $siteaccess
+     * @param bool $posix
      *
      * @return string
      */
-    public function getLanguageForSiteAccess($siteaccess = null)
+    public function getLanguageForSiteAccess($siteaccess = null, $posix = null)
     {
-        return $this->configResolver->getParameter('languages', null, $siteaccess)[0];
+        $lang = $this->configResolver->getParameter('languages', null, $siteaccess)[0];
+        return !$posix ? $lang : $this->localeConverter->convertToPOSIX($lang);
     }
 
     /**
@@ -174,44 +218,10 @@ class LanguageResolver
     /**
      * Returns the list of all available languages, including the ones configured in related SiteAccesses.
      *
+     * @param bool $posix
      * @return array
      */
-    public function getSiteAccesses()
-    {
-        $siteAccesses = array_intersect(
-            $this->configResolver->getParameter('translation_siteaccesses'),
-            $this->configResolver->getParameter('related_siteaccesses')
-        );
-
-        return $siteAccesses;
-    }
-
-    /**
-     * Returns the list of all available languages, including the ones configured in related SiteAccesses.
-     *
-     * @return array
-     */
-    public function getTranslationSiteAccesses()
-    {
-        return $this->configResolver->getParameter('translation_siteaccesses') ?:
-            $this->configResolver->getParameter('related_siteaccesses');
-    }
-
-
-    /**
-     * @return array
-     */
-    public function getPrioritizedLanguages()
-    {
-        return (array)$this->configResolver->getParameter('languages');
-    }
-
-    /**
-     * Returns the list of all available languages, including the ones configured in related SiteAccesses.
-     *
-     * @return array
-     */
-    public function getLanguages()
+    public function getTranslationLanguages($posix = null)
     {
         $translationSiteAccesses = $this->getTranslationSiteAccesses();
 
@@ -223,7 +233,7 @@ class LanguageResolver
             $availableLanguages[$sa] = array_shift($languages);
         }
 
-        return array_unique($availableLanguages);
+        return !$posix ? array_unique($availableLanguages) : array_map([$this->localeConverter, 'convertToPOSIX'], array_unique($availableLanguages));
     }
 
     /**
@@ -233,7 +243,7 @@ class LanguageResolver
     {
         $languages = [];
 
-        foreach ($this->getLanguages() as $siteaccess => $lang) {
+        foreach ($this->getTranslationLanguages() as $siteaccess => $lang) {
             $languages[] = [
                 'siteaccess' => $siteaccess,
                 'lang'       => $lang,

@@ -89,10 +89,10 @@ class ContentApiService
         }
 
         if ($primaryId = RepositoryUtil::resolveContentId($id)) {
-            return $this->contentService->loadContent($primaryId, $this->languageResolver->getPrioritizedLanguages());
+            return $this->contentService->loadContent($primaryId, $this->languageResolver->getLanguages());
         }
 
-        return $this->contentService->loadContentByRemoteId((string)$id, $this->languageResolver->getPrioritizedLanguages());
+        return $this->contentService->loadContentByRemoteId((string)$id, $this->languageResolver->getLanguages());
     }
 
     /**

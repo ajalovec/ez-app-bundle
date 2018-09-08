@@ -298,7 +298,7 @@ class LocationApiService
     public function isAvailableException(Location $location, $language = null)
     {
         if (!$this->isAvailable($location, $language)) {
-            throw new NotFoundException('Location', "id: {$location->id}, language: {$this->languageResolver->getLanguage()}, siteaccess: {$this->languageResolver->getSiteAccessName()}");
+            throw new NotFoundException('Location', "id: {$location->id}, language: {$this->languageResolver->getLanguage()}, siteaccess: {$this->languageResolver->getSiteAccess()->name}");
         }
 
         return $location;
