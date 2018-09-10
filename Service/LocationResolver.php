@@ -7,8 +7,9 @@ namespace Origammi\Bundle\EzAppBundle\Service;
 
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Location;
+use eZ\Publish\Core\Base\Exceptions\NotFoundException;
 use eZ\Publish\Core\MVC\Symfony\Templating\GlobalHelper;
-use Origammi\Bundle\EzAppBundle\Repository\LocationApiService;
+use Origammi\Bundle\EzAppBundle\Repository\Traits\LocationServiceTrait;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -20,10 +21,7 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class LocationResolver
 {
-    /**
-     * @var LocationApiService
-     */
-    private $locationService;
+    use LocationServiceTrait;
 
     /**
      * @var GlobalHelper
@@ -36,16 +34,39 @@ class LocationResolver
     private $currentLocation;
 
     /**
-     * @param LocationApiService $locationService
-     * @param GlobalHelper       $globalHelper
+     * @param GlobalHelper $globalHelper
      *
      * @internal param RequestStack $requestStack
      * @internal param ConfigResolver $configResolver
      */
-    public function __construct(LocationApiService $locationService, GlobalHelper $globalHelper)
+    public function __construct(GlobalHelper $globalHelper)
     {
-        $this->locationService = $locationService;
-        $this->globalHelper    = $globalHelper;
+        $this->globalHelper = $globalHelper;
+    }
+
+
+    /**
+     * @param Location    $location
+     * @param string|null $language
+     *
+     * @return bool
+     */
+    public function isAvailable(Location $location, $language = null)
+    {
+        return $this->locationService->isAvailable($location, $language);
+    }
+
+
+    /**
+     * @param Location    $location
+     * @param string|null $language
+     *
+     * @throws NotFoundException
+     * @return Location
+     */
+    public function isAvailableException(Location $location, $language = null)
+    {
+        return $this->locationService->isAvailableException($location, $language);
     }
 
     /**

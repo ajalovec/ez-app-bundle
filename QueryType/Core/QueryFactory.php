@@ -105,7 +105,7 @@ class QueryFactory
             $filters[] = new Criterion\Visibility($this->visible ? Criterion\Visibility::VISIBLE : Criterion\Visibility::HIDDEN);
         }
 
-        if (is_string($this->language) && strlen($this->language)) {
+        if (!empty($this->language) && is_string($this->language) || is_array($this->language)) {
             $filters[] = new Criterion\LanguageCode($this->language);
         }
 
@@ -279,7 +279,7 @@ class QueryFactory
     }
 
     /**
-     * @param string|null $language
+     * @param string|string[]|null $language
      *
      * @return $this
      */

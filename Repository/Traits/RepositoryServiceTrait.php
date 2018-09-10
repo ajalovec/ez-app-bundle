@@ -1,7 +1,5 @@
 <?php
-/**
- * Copyright (c) 2017.
- */
+
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
 use eZ\Publish\API\Repository\Repository;
@@ -20,9 +18,11 @@ trait RepositoryServiceTrait
     protected $repositoryService;
 
     /**
-     * @param Repository|null $repositoryService
+     * @required
+     *
+     * @param Repository $repositoryService
      */
-    public function setRepositoryService(Repository $repositoryService = null)
+    public function setRepositoryService(Repository $repositoryService)
     {
         $this->repositoryService = $repositoryService;
     }

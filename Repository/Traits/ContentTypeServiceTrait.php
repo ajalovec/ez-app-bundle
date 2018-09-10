@@ -1,7 +1,4 @@
 <?php
-/**
- * Copyright (c) 2017.
- */
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
@@ -22,9 +19,11 @@ trait ContentTypeServiceTrait
     protected $contentTypeService;
 
     /**
-     * @param ContentTypeApiService|null $contentTypeService
+     * @required
+     *
+     * @param ContentTypeApiService $contentTypeService
      */
-    public function setContentTypeService(ContentTypeApiService $contentTypeService = null)
+    public function setContentTypeService(ContentTypeApiService $contentTypeService)
     {
         $this->contentTypeService = $contentTypeService;
     }

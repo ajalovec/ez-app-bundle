@@ -1,7 +1,4 @@
 <?php
-/**
- * Copyright (c) 2017.
- */
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
@@ -21,9 +18,11 @@ trait SearchServiceTrait
     protected $searchService;
 
     /**
-     * @param SearchService|null $searchService
+     * @required
+     *
+     * @param SearchService $searchService
      */
-    public function setSearchService(SearchService $searchService = null)
+    public function setSearchService(SearchService $searchService)
     {
         $this->searchService = $searchService;
     }

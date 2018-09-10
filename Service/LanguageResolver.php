@@ -149,8 +149,13 @@ class LanguageResolver
             throw new NotFoundException('%ezpublish.siteaccesses_by_language%', $language);
         }
 
-        return $this->siteAccessesByLanguage[$language][0];
+//        return $this->siteAccessesByLanguage[$language][0];
+
+        $translationSiteAccesses = array_intersect($this->siteAccessesByLanguage[$language], $this->getTranslationSiteAccesses());
+
+        return array_shift($translationSiteAccesses);
     }
+
 
     /**
      * @param Request $request

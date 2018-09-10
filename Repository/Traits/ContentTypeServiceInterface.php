@@ -1,7 +1,4 @@
 <?php
-/**
- * Copyright (c) 2017.
- */
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
@@ -16,7 +13,7 @@ use Origammi\Bundle\EzAppBundle\Repository\ContentTypeApiService;
 interface ContentTypeServiceInterface
 {
     /**
-     * @param ContentTypeApiService|null $contentTypeService
+     * @param ContentTypeApiService $contentTypeService
      */
-    public function setContentTypeService(ContentTypeApiService $contentTypeService = null);
+    public function setContentTypeService(ContentTypeApiService $contentTypeService);
 }

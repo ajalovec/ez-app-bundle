@@ -1,7 +1,4 @@
 <?php
-/**
- * Copyright (c) 2017.
- */
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
@@ -16,7 +13,7 @@ use Origammi\Bundle\EzAppBundle\Repository\LocationApiService;
 interface LocationServiceInterface
 {
     /**
-     * @param LocationApiService|null $locationService
+     * @param LocationApiService $locationService
      */
-    public function setLocationService(LocationApiService $locationService = null);
+    public function setLocationService(LocationApiService $locationService);
 }

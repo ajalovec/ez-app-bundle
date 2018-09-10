@@ -1,7 +1,4 @@
 <?php
-/**
- * Copyright (c) 2017.
- */
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
@@ -16,7 +13,9 @@ use eZ\Publish\API\Repository\SearchService;
 interface SearchServiceInterface
 {
     /**
-     * @param SearchService|null $searchService
+     * @required
+     *
+     * @param SearchService $searchService
      */
-    public function setSearchService(SearchService $searchService = null);
+    public function setSearchService(SearchService $searchService);
 }

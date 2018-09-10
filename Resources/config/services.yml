@@ -82,8 +82,9 @@ services:
   origammi.ez_app.service.location_resolver:
       class: Origammi\Bundle\EzAppBundle\Service\LocationResolver
       arguments:
-          - "@origammi.ez_app.repository.location_api"
           - "@ezpublish.templating.global_helper"
+      calls:
+          - ['setLocationService', ['@origammi.ez_app.repository.location_api']]
 
 
   ##

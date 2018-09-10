@@ -73,33 +73,95 @@ class ContentApiService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
      * @return Content|Content[]
      */
-    public function load($id)
+    public function load($id, $languageCode = null)
     {
         if (is_array($id)) {
-            $content = [];
+            $result = [];
             foreach ($id as $i) {
-                $content[] = $this->load($i);
+                if ($content = $this->load($i, $languageCode)) {
+                    $result[] = $content;
+                }
             }
 
-            return $content;
+            return $result;
         }
 
         if ($id instanceof Content) {
             return $id;
+        } elseif ($id instanceof ContentInfo) {
+            return $this->loadByContentInfo($id, $languageCode);
+        } elseif ($id instanceof VersionInfo) {
+            return $this->loadByVersionInfo($id, $languageCode);
         }
 
         if ($primaryId = RepositoryUtil::resolveContentId($id)) {
-            return $this->contentService->loadContent($primaryId, $this->languageResolver->getLanguages());
+            return $this->loadById($id, $languageCode);
         }
 
-        return $this->contentService->loadContentByRemoteId((string)$id, $this->languageResolver->getLanguages());
+        return $this->loadByRemoteId($id, $languageCode);
     }
+
+
+    /**
+     * @param int                  $id
+     * @param string|string[]|bool $languageCode
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     * @return Content
+     */
+    public function loadById($id, $languageCode = null)
+    {
+        return $this->contentService->loadContent((int)$id, true === $languageCode ? $this->languageResolver->getLanguages() : $languageCode);
+    }
+
+
+    /**
+     * @param string               $id
+     * @param string|string[]|bool $languageCode
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     * @return Content
+     */
+    public function loadByRemoteId($id, $languageCode = null)
+    {
+        return $this->contentService->loadContentByRemoteId((string)$id, true === $languageCode ? $this->languageResolver->getLanguages() : $languageCode);
+    }
+
+
+    /**
+     * @param ContentInfo          $contentInfo
+     * @param string|string[]|bool $languageCode
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     * @return Content
+     */
+    public function loadByContentInfo(ContentInfo $contentInfo, $languageCode = null)
+    {
+        return $this->contentService->loadContentByContentInfo($contentInfo, true === $languageCode ? $this->languageResolver->getLanguages() : $languageCode);
+    }
+
+
+    /**
+     * @param VersionInfo          $versionInfo
+     * @param string|string[]|bool $languageCode
+     *
+     * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException
+     * @return Content
+     */
+    public function loadByVersionInfo(VersionInfo $versionInfo, $languageCode = null)
+    {
+        return $this->contentService->loadContentByVersionInfo($versionInfo, true === $languageCode ? $this->languageResolver->getLanguages() : $languageCode);
+    }
+
 
     /**
      * @param array|SearchResult|LocationList $ids
-     * @param int|null                        $limit
-     * @param int|null                        $offset
-     * @param string|null                     $languageCode
+     * @param int                             $limit
+     * @param int                             $offset
+     * @param string|string[]|bool            $languageCode Either specific language code or true for current resolved language
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @return Content[]
@@ -117,7 +179,7 @@ class ContentApiService
         ;
 
         if ($languageCode) {
-            $queryFactory->setLanguage(is_string($languageCode) ? $languageCode : $this->languageResolver->getLanguage());
+            $queryFactory->setLanguage(true === $languageCode ? $this->languageResolver->getLanguages() : $languageCode);
         }
 
         if (is_int($limit)) {
@@ -138,11 +200,11 @@ class ContentApiService
     }
 
     /**
-     * @param Location          $location
-     * @param array|string|null $allowed_content_types List of contentTypeIdentifiers to whitelist
-     * @param int|null          $limit
-     * @param int|null          $offset
-     * @param string|null       $languageCode
+     * @param Location             $location
+     * @param array|string         $allowed_content_types List of contentTypeIdentifiers to whitelist
+     * @param int                  $limit
+     * @param int                  $offset
+     * @param string|string[]|bool $languageCode
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
@@ -157,7 +219,7 @@ class ContentApiService
         ;
 
         if ($languageCode) {
-            $queryFactory->setLanguage(is_string($languageCode) ? $languageCode : $this->languageResolver->getLanguage());
+            $queryFactory->setLanguage(true === $languageCode ? $this->languageResolver->getLanguages() : $languageCode);
         }
 
         if (is_int($limit)) {
@@ -174,11 +236,11 @@ class ContentApiService
     }
 
     /**
-     * @param Location          $location
-     * @param array|string|null $allowed_content_types List of contentTypeIdentifiers to whitelist
-     * @param int|null          $limit
-     * @param int|null          $offset
-     * @param string|null       $languageCode
+     * @param Location             $location
+     * @param array|string         $allowed_content_types List of contentTypeIdentifiers to whitelist
+     * @param int                  $limit
+     * @param int                  $offset
+     * @param string|string[]|bool $languageCode
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
      * @throws \eZ\Publish\API\Repository\Exceptions\NotImplementedException
@@ -194,7 +256,7 @@ class ContentApiService
         ;
 
         if ($languageCode) {
-            $queryFactory->setLanguage(is_string($languageCode) ? $languageCode : $this->languageResolver->getLanguage());
+            $queryFactory->setLanguage(true === $languageCode ? $this->languageResolver->getLanguages() : $languageCode);
         }
 
         if (is_int($limit)) {

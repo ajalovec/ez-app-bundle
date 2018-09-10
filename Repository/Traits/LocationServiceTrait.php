@@ -1,7 +1,4 @@
 <?php
-/**
- * Copyright (c) 2017.
- */
 
 namespace Origammi\Bundle\EzAppBundle\Repository\Traits;
 
@@ -21,9 +18,11 @@ trait LocationServiceTrait
     protected $locationService;
 
     /**
-     * @param LocationApiService|null $locationService
+     * @required
+     *
+     * @param LocationApiService $locationService
      */
-    public function setLocationService(LocationApiService $locationService = null)
+    public function setLocationService(LocationApiService $locationService)
     {
         $this->locationService = $locationService;
     }

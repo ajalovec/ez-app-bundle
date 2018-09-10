@@ -30,6 +30,8 @@ use Origammi\Bundle\EzAppBundle\Utils\RepositoryUtil;
  */
 class LocationApiService
 {
+//    use LanguageResolverTrait;
+
     /**
      * @var LocationService
      */
@@ -80,15 +82,14 @@ class LocationApiService
     public function load($id, $isAvailable = null)
     {
         if (is_array($id)) {
-            $locations = [];
+            $result = [];
             foreach ($id as $i) {
-                if (!$location = $this->load($i, $isAvailable)) {
-                    continue;
+                if ($location = $this->load($i, $isAvailable)) {
+                    $result[] = $location;
                 }
-                $locations[] = $location;
             }
 
-            return $locations;
+            return $result;
         }
 
         if ($id instanceof Location) {
